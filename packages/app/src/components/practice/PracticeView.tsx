@@ -49,7 +49,7 @@ export const PracticeView: React.FC = () => {
         flexDirection: 'column',
         height: '100%',
         backgroundColor: 'var(--bg-main)',
-        padding: '12px 18px calc(var(--tab-bar-height) + 12px)',
+        padding: '12px 18px calc(var(--tab-bar-height) + 24px)',
         boxSizing: 'border-box',
         overflow: 'hidden',
       }}

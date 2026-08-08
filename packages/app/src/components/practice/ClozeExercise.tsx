@@ -216,15 +216,15 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
         ) : null}
       </div>
 
-      {/* Fixed Height Mode Container (Prevents Layout Shifts Between Choice and Keyboard) */}
-      <div style={{ height: 180, flexShrink: 0 }}>
+      {/* Mode Container (Flexibly sized so options and next button fit on all viewport heights) */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {preferredClozeMode === 'selection' ? (
           /* Selection Mode Grid (4 Compact Option Cards) */
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: 12,
+              gap: 8,
             }}
           >
             {options.map((opt, idx) => {
@@ -264,8 +264,8 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
                     background: btnBg,
                     border: `1px solid ${btnBorder}`,
                     color: btnColor,
-                    borderRadius: 16,
-                    padding: '16px 0 14px',
+                    borderRadius: 12,
+                    padding: '8px 0 6px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -278,9 +278,9 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
                   <span
                     style={{
                       position: 'absolute',
-                      top: 8,
-                      left: 12,
-                      fontSize: 11,
+                      top: 4,
+                      left: 8,
+                      fontSize: 10,
                       fontWeight: 700,
                       color: 'var(--text-muted)',
                       opacity: 0.6,
@@ -289,11 +289,11 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
                     [{idx + 1}]
                   </span>
 
-                  <span style={{ fontSize: 32, fontWeight: 600, lineHeight: 1.1 }}>{opt.id}</span>
+                  <span style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.1 }}>{opt.id}</span>
 
-                  <div style={{ height: 18, marginTop: 4, display: 'flex', alignItems: 'center' }}>
+                  <div style={{ height: 14, marginTop: 2, display: 'flex', alignItems: 'center' }}>
                     {isPeeked || submitted ? (
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-cyan)' }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-cyan)' }}>
                         {opt.pinyin[0]}
                       </span>
                     ) : null}
@@ -304,56 +304,34 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
           </div>
         ) : (
           /* Keyboard Mode Form Input */
-          <form onSubmit={handleKeyboardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ position: 'relative' }}>
-              <input
-                ref={inputRef}
-                type="text"
-                value={keyboardInput}
-                onChange={(e) => setKeyboardInput(e.target.value)}
-                disabled={submitted}
-                placeholder="Type Chinese character..."
-                maxLength={4}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: 14,
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: 22,
-                  fontWeight: 600,
-                  textAlign: 'center',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-
-            {!submitted && (
-              <button
-                type="submit"
-                disabled={!keyboardInput.trim()}
-                style={{
-                  width: '100%',
-                  padding: '12px 0',
-                  borderRadius: 12,
-                  border: 'none',
-                  background: !keyboardInput.trim() ? 'rgba(255, 255, 255, 0.08)' : 'var(--accent-cyan)',
-                  color: !keyboardInput.trim() ? 'var(--text-muted)' : '#000',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: !keyboardInput.trim() ? 'default' : 'pointer',
-                }}
-              >
-                Submit (Enter)
-              </button>
-            )}
+          <form onSubmit={handleKeyboardSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input
+              type="text"
+              placeholder="Type Pinyin or Chinese character..."
+              value={keyboardInput}
+              onChange={(e) => setKeyboardInput(e.target.value)}
+              disabled={submitted}
+              autoFocus
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-primary)',
+                fontSize: 16,
+                textAlign: 'center',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
           </form>
         )}
+      </div>
 
-        {/* Continue Button after Submission */}
-        {submitted && (
+      {/* Dedicated Fixed Action Slot for Next Button (Always Reserved, Zero Layout Shifts) */}
+      <div style={{ height: 44, flexShrink: 0, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {submitted ? (
           <button
             onClick={handleNext}
             style={{
@@ -370,13 +348,30 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
               justifyContent: 'center',
               gap: 8,
               cursor: 'pointer',
-              marginTop: 10,
             }}
           >
             <span>Next (Enter)</span>
             <ArrowRight size={16} />
           </button>
-        )}
+        ) : preferredClozeMode === 'keyboard' ? (
+          <button
+            onClick={handleKeyboardSubmit}
+            disabled={!keyboardInput.trim()}
+            style={{
+              width: '100%',
+              padding: '12px 0',
+              borderRadius: 12,
+              border: 'none',
+              background: !keyboardInput.trim() ? 'rgba(255, 255, 255, 0.08)' : 'var(--accent-cyan)',
+              color: !keyboardInput.trim() ? 'var(--text-muted)' : '#000',
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: !keyboardInput.trim() ? 'default' : 'pointer',
+            }}
+          >
+            Submit (Enter)
+          </button>
+        ) : null}
       </div>
     </div>
   );
