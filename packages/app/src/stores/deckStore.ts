@@ -4,7 +4,7 @@ import type { CharacterWithProgress } from '../db/queries';
 
 interface DeckState {
   activeDeckId: string;
-  viewMode: 'list' | 'constellation';
+  viewMode: 'list' | 'orbit' | 'showAll';
   sortOption: SortOption;
   searchQuery: string;
   selectedCharacter: CharacterWithProgress | null;
@@ -12,7 +12,7 @@ interface DeckState {
   showAllConstellation: boolean;
   
   setActiveDeckId: (id: string) => void;
-  setViewMode: (mode: 'list' | 'constellation') => void;
+  setViewMode: (mode: 'list' | 'orbit' | 'showAll') => void;
   setSortOption: (sort: SortOption) => void;
   setSearchQuery: (query: string) => void;
   setSelectedCharacter: (char: CharacterWithProgress | null) => void;

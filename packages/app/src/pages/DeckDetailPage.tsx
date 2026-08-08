@@ -7,7 +7,7 @@ import { useDeckStore } from '../stores/deckStore';
 import { DeckListView } from '../components/deck/DeckListView';
 import { ConstellationCanvas } from '../components/constellation/ConstellationCanvas';
 import { CharacterDetailModal } from '../components/deck/CharacterDetailModal';
-import { ArrowLeft, List, Share2 } from 'lucide-react';
+import { ArrowLeft, List, Share2, Globe } from 'lucide-react';
 
 export const DeckDetailPage: React.FC = () => {
   const { deckId = 'top-1000' } = useParams<{ deckId: string }>();
@@ -20,11 +20,11 @@ export const DeckDetailPage: React.FC = () => {
   const setViewMode = useDeckStore((s) => s.setViewMode);
 
   return (
-    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <div
         style={{
-          padding: '16px 20px',
+          padding: '12px 20px',
           borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
@@ -86,7 +86,7 @@ export const DeckDetailPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setViewMode('constellation')}
+            onClick={() => setViewMode('orbit')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -95,25 +95,42 @@ export const DeckDetailPage: React.FC = () => {
               borderRadius: 8,
               fontSize: 12,
               fontWeight: 500,
-              backgroundColor: viewMode === 'constellation' ? 'var(--accent-cyan)' : 'transparent',
-              color: viewMode === 'constellation' ? '#000' : 'var(--text-secondary)',
+              backgroundColor: viewMode === 'orbit' ? 'var(--accent-cyan)' : 'transparent',
+              color: viewMode === 'orbit' ? '#000' : 'var(--text-secondary)',
               transition: 'all 0.15s ease',
             }}
           >
             <Share2 size={14} />
-            <span>Constellation</span>
+            <span>Orbit</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('showAll')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '6px 12px',
+              borderRadius: 8,
+              fontSize: 12,
+              fontWeight: 500,
+              backgroundColor: viewMode === 'showAll' ? 'var(--accent-cyan)' : 'transparent',
+              color: viewMode === 'showAll' ? '#000' : 'var(--text-secondary)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Globe size={14} />
+            <span>Show All</span>
           </button>
         </div>
       </div>
 
       {/* Main View Content */}
-      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {viewMode === 'list' ? (
           <DeckListView characters={characters || []} />
         ) : (
-          <div style={{ flex: 1, minHeight: 'calc(100vh - 120px)' }}>
-            <ConstellationCanvas characters={characters || []} />
-          </div>
+          <ConstellationCanvas characters={characters || []} initialMode={viewMode === 'showAll' ? 'showAll' : 'orbit'} />
         )}
       </div>
 
