@@ -10,8 +10,14 @@ interface SentenceMagnetProps {
 
 /**
  * Maps a specific word block chunk (e.g. "近照" or "那") to its exact Pinyin syllables.
+ * Punctuation symbols return "" so sentence pinyin is never leaked.
  */
 function getChunkPinyin(chunkText: string, chinese: string, fullPinyin: string): string {
+  // If chunk is punctuation or contains no Chinese ideographs, return empty string
+  if (!/[\u4e00-\u9fa5]/.test(chunkText)) {
+    return '';
+  }
+
   // Clean Chinese characters and pinyin tokens
   const chars = chinese.replace(/[^\u4e00-\u9fa5]/g, '').split('');
   const pyTokens = fullPinyin.split(/\s+/).filter(Boolean);
@@ -31,7 +37,7 @@ function getChunkPinyin(chunkText: string, chinese: string, fullPinyin: string):
     if (result) return result;
   }
 
-  return fullPinyin;
+  return '';
 }
 
 export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComplete }) => {
@@ -75,10 +81,12 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
   const handleSubmit = async () => {
     if (submitted || selectedIndices.length === 0) return;
 
-    const constructedText = selectedIndices.map((id) => originalChunks[id]).join('');
-    const targetText = sentence.chinese;
+    const rawConstructed = selectedIndices.map((id) => originalChunks[id]).join('');
+    // Strip punctuation for flexible correctness evaluation (punctuation not strictly required)
+    const cleanConstructed = rawConstructed.replace(/[^\u4e00-\u9fa5]/g, '');
+    const cleanTarget = sentence.chinese.replace(/[^\u4e00-\u9fa5]/g, '');
 
-    const correct = constructedText === targetText;
+    const correct = cleanConstructed === cleanTarget;
     setIsCorrect(correct);
     setSubmitted(true);
 
@@ -194,7 +202,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
                 </button>
 
                 {/* Floating Tooltip displaying ONLY the hovered chunk's Pinyin NEXT to the button */}
-                {isPeeked && (
+                {isPeeked && chunkPy && (
                   <div
                     style={{
                       position: 'absolute',
@@ -242,35 +250,37 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
         )}
       </div>
 
-      {/* Result Pinyin Reveal after submission */}
-      {submitted && (
-        <div
-          style={{
-            background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-            border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
-            borderRadius: 14,
-            padding: '12px 16px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-            {isCorrect ? <Check size={16} color="#4CAF50" /> : <X size={16} color="#F44336" />}
-            <span style={{ fontWeight: 700, fontSize: 13, color: isCorrect ? '#4CAF50' : '#F44336' }}>
-              {isCorrect ? 'Correct!' : 'Correct Sentence:'}
-            </span>
-          </div>
+      {/* Reserved Result Pinyin Reveal Space (Prevents UI shifting/jumping) */}
+      <div style={{ minHeight: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {submitted ? (
+          <div
+            style={{
+              width: '100%',
+              background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+              border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
+              borderRadius: 14,
+              padding: '10px 16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+              {isCorrect ? <Check size={16} color="#4CAF50" /> : <X size={16} color="#F44336" />}
+              <span style={{ fontWeight: 700, fontSize: 13, color: isCorrect ? '#4CAF50' : '#F44336' }}>
+                {isCorrect ? 'Correct!' : 'Correct Sentence:'}
+              </span>
+            </div>
 
-          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {sentence.chinese}
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>
+              {sentence.chinese}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--accent-cyan)', marginTop: 2 }}>
+              {sentence.pinyin}
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: 'var(--accent-cyan)', marginTop: 2 }}>
-            {sentence.pinyin}
-          </div>
-        </div>
-      )}
+        ) : null}
+      </div>
 
-      {/* Word Chunk Bank */}
-      {!submitted && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+      {/* Word Chunk Bank (Always Visible in Allocated Fixed Container) */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', minHeight: 90, flexShrink: 0 }}>
           {shuffledBank.map((item) => {
             const isUsed = selectedIndices.includes(item.id);
             const isPeeked = peekedChunkId === item.id;
@@ -316,7 +326,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
                 </button>
 
                 {/* Floating Tooltip displaying ONLY the hovered chunk's Pinyin directly ABOVE the button */}
-                {isPeeked && !isUsed && (
+                {isPeeked && !isUsed && chunkPy && (
                   <div
                     style={{
                       position: 'absolute',
@@ -343,7 +353,6 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
             );
           })}
         </div>
-      )}
 
       {/* Action Footer Button */}
       <div>

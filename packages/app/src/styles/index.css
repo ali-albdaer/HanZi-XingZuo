@@ -26,6 +26,26 @@
   --tab-bar-height: 64px;
 }
 
+[data-theme="light"] {
+  --bg-primary: #F4F6FB;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --border-color: #E2E8F0;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+
+  --accent-cyan: #0284C7;
+  --accent-cyan-hover: #0369A1;
+  --accent-cyan-muted: rgba(2, 132, 199, 0.4);
+  --accent-secondary: #0891B2;
+  --accent-gradient: linear-gradient(135deg, #0284C7, #0891B2);
+  --accent-gradient-hover: linear-gradient(135deg, #0369A1, #0E7490);
+  --accent-purple: #6D28D9;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

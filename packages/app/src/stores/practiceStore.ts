@@ -46,8 +46,10 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
 
   nextExercise: () => {
     const { currentIndex, queue } = get();
-    if (currentIndex + 1 >= queue.length) {
-      set({ isCompleted: true, sessionActive: false });
+    if (currentIndex + 1 >= queue.length && queue.length > 0) {
+      // Reshuffle queue items so practice continues infinitely
+      const reshuffled = [...queue].sort(() => Math.random() - 0.5);
+      set({ queue: [...queue, ...reshuffled], currentIndex: currentIndex + 1 });
     } else {
       set({ currentIndex: currentIndex + 1 });
     }

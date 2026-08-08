@@ -70,9 +70,12 @@ export function recordExerciseResult(
   const keyboardCleared = currentProgress.keyboardCleared || (isCorrect && isKeyboardMode);
 
   if (!isCorrect) {
+    // Wrong answers NEVER promote grey (unseen) characters to learned/bronze!
+    const newMastery: MasteryLevel = currentProgress.mastery === 'grey' ? 'grey' : 'bronze';
+
     return {
       ...currentProgress,
-      mastery: 'bronze',
+      mastery: newMastery,
       correctStreak: 0,
       totalReviews: currentProgress.totalReviews + 1,
       lastReviewedAt: now,

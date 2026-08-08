@@ -109,15 +109,11 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
           paddingBottom: 4,
         }}
       >
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
-          Cloze Active Recall
-        </div>
-
         <div
           style={{
             display: 'flex',
@@ -169,7 +165,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
         </div>
       </div>
 
-      {/* English Prompt & Cloze Sentence Box (Centered Vertically) */}
+      {/* English Prompt & Cloze Sentence Box (Fixed Height Slot) */}
       <div
         style={{
           background: 'rgba(255, 255, 255, 0.03)',
@@ -177,6 +173,10 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
           borderRadius: 18,
           padding: '20px 22px',
           textAlign: 'center',
+          minHeight: 110,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
         }}
       >
         <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
@@ -187,34 +187,37 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
         </div>
       </div>
 
-      {/* Result Pinyin Reveal after submission */}
-      {submitted && (
-        <div
-          style={{
-            background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-            border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
-            borderRadius: 14,
-            padding: '12px 16px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-            {isCorrect ? <Check size={16} color="#4CAF50" /> : <X size={16} color="#F44336" />}
-            <span style={{ fontWeight: 700, fontSize: 13, color: isCorrect ? '#4CAF50' : '#F44336' }}>
-              {isCorrect ? 'Correct!' : `Correct Character: ${targetChar.id}`}
-            </span>
-          </div>
+      {/* Reserved Result Pinyin Reveal Space (Prevents UI shifting/jumping) */}
+      <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {submitted ? (
+          <div
+            style={{
+              width: '100%',
+              background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+              border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
+              borderRadius: 14,
+              padding: '10px 16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+              {isCorrect ? <Check size={16} color="#4CAF50" /> : <X size={16} color="#F44336" />}
+              <span style={{ fontWeight: 700, fontSize: 13, color: isCorrect ? '#4CAF50' : '#F44336' }}>
+                {isCorrect ? 'Correct!' : `Correct Character: ${targetChar.id}`}
+              </span>
+            </div>
 
-          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {sentence.chinese}
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>
+              {sentence.chinese}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--accent-cyan)', marginTop: 2 }}>
+              {sentence.pinyin}
+            </div>
           </div>
-          <div style={{ fontSize: 13, color: 'var(--accent-cyan)', marginTop: 2 }}>
-            {sentence.pinyin}
-          </div>
-        </div>
-      )}
+        ) : null}
+      </div>
 
-      {/* Mode Controls & Option Grid */}
-      <div>
+      {/* Fixed Height Mode Container (Prevents Layout Shifts Between Choice and Keyboard) */}
+      <div style={{ height: 180, flexShrink: 0 }}>
         {preferredClozeMode === 'selection' ? (
           /* Selection Mode Grid (4 Compact Option Cards) */
           <div
@@ -293,11 +296,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
                       <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-cyan)' }}>
                         {opt.pinyin[0]}
                       </span>
-                    ) : (
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)', opacity: 0.4 }}>
-                        Hold to peek
-                      </span>
-                    )}
+                    ) : null}
                   </div>
                 </button>
               );

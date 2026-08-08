@@ -64,4 +64,20 @@ describe('SRS Decay Algorithm', () => {
     expect(result.mastery).toBe('silver');
     expect(result.keyboardCleared).toBe(false);
   });
+
+  it('keeps grey mastery for wrong answers on unseen characters', () => {
+    const progress: UserProgressEntity = {
+      characterId: '好',
+      deckId: 'top-1000',
+      mastery: 'grey',
+      lastReviewedAt: null,
+      correctStreak: 0,
+      totalReviews: 0,
+      keyboardCleared: false,
+    };
+
+    const result = recordExerciseResult(progress, false, false); // Incorrect answer
+    expect(result.mastery).toBe('grey');
+    expect(result.correctStreak).toBe(0);
+  });
 });
