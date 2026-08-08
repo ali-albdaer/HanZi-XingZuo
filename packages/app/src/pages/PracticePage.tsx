@@ -1,7 +1,58 @@
-import React from 'react';
-import { Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { usePracticeStore } from '../stores/practiceStore';
+import { generatePracticeQueue } from '../core/queue';
+import { PracticeView } from '../components/practice/PracticeView';
+import { getDeckCharacters } from '../db/queries';
+import { isMasteryDecayed } from '../core/srs';
+import { Play, Sparkles } from 'lucide-react';
 
 export const PracticePage: React.FC = () => {
+  const { sessionActive, startSession } = usePracticeStore();
+  const [loading, setLoading] = useState(false);
+  const [dueCount, setDueCount] = useState(0);
+  const [unseenCount, setUnseenCount] = useState(0);
+
+  useEffect(() => {
+    async function loadStats() {
+      const all = await getDeckCharacters('top-1000');
+      const now = Date.now();
+
+      let due = 0;
+      let unseen = 0;
+
+      for (const item of all) {
+        if (item.progress.mastery === 'grey') {
+          unseen++;
+        } else {
+          const decayed = isMasteryDecayed(item.progress.mastery, item.progress.lastReviewedAt, now);
+          if (decayed) {
+            due++;
+          }
+        }
+      }
+
+      setDueCount(due);
+      setUnseenCount(unseen);
+    }
+    loadStats();
+  }, [sessionActive]);
+
+  const handleStartPractice = async () => {
+    setLoading(true);
+    try {
+      const queue = await generatePracticeQueue('top-1000', { sessionSize: 10 });
+      startSession(queue);
+    } catch (err) {
+      console.error('Failed to generate practice queue:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (sessionActive) {
+    return <PracticeView />;
+  }
+
   return (
     <div
       style={{
@@ -12,28 +63,104 @@ export const PracticePage: React.FC = () => {
         justifyContent: 'center',
         padding: 24,
         textAlign: 'center',
+        backgroundColor: 'var(--bg-main)',
       }}
     >
       <div
         style={{
-          width: 64,
-          height: 64,
-          borderRadius: 20,
-          background: 'rgba(0, 229, 255, 0.12)',
+          width: 72,
+          height: 72,
+          borderRadius: 24,
+          background: 'rgba(0, 229, 255, 0.15)',
+          border: '1px solid var(--accent-cyan)',
           color: 'var(--accent-cyan)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 16,
+          marginBottom: 20,
         }}
       >
-        <Play size={32} />
+        <Sparkles size={36} />
       </div>
 
-      <h2 style={{ fontSize: 20, fontWeight: 700 }}>Practice Mode</h2>
-      <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8, maxWidth: 300, lineHeight: 1.4 }}>
-        Dual-priority review queue, Sentence Magnet chunking, and Contextual Cloze exercises coming in Phase 2!
+      <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+        Practice & Active Recall
+      </h2>
+
+      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, maxWidth: 320, lineHeight: 1.4 }}>
+        Interactive Sentence Magnet re-ordering and Contextual Cloze exercises tailored to your SRS memory decay.
       </p>
+
+      {/* Queue Breakdown Stats */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 12,
+          width: '100%',
+          maxWidth: 320,
+          margin: '28px 0',
+        }}
+      >
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 16,
+            padding: '16px 12px',
+          }}
+        >
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent-cyan)' }}>
+            {dueCount}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+            Due SRS Reviews
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 16,
+            padding: '16px 12px',
+          }}
+        >
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#4CAF50' }}>
+            {unseenCount}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+            New Characters
+          </div>
+        </div>
+      </div>
+
+      {/* Start Button */}
+      <button
+        onClick={handleStartPractice}
+        disabled={loading}
+        style={{
+          width: '100%',
+          maxWidth: 320,
+          padding: '16px 0',
+          borderRadius: 16,
+          border: 'none',
+          background: 'var(--accent-cyan)',
+          color: '#000',
+          fontSize: 18,
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+          cursor: loading ? 'default' : 'pointer',
+          boxShadow: '0 4px 16px rgba(0, 229, 255, 0.3)',
+          transition: 'transform 0.15s ease',
+        }}
+      >
+        <Play size={20} fill="#000" />
+        <span>{loading ? 'Preparing Session...' : 'Start Practice Session'}</span>
+      </button>
     </div>
   );
 };

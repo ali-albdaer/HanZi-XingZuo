@@ -6,20 +6,26 @@ import { CopyButton } from '../shared/CopyButton';
 import { X, Play, Hash, GitFork } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import { generatePracticeQueue } from '../../core/queue';
+import { usePracticeStore } from '../../stores/practiceStore';
+
 export const CharacterDetailModal: React.FC = () => {
+  const navigate = useNavigate();
   const selectedCharacter = useDeckStore((s) => s.selectedCharacter);
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
-  const navigate = useNavigate();
 
   if (!selectedCharacter) return null;
 
   const copyText = `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
     selectedCharacter.sentences.map((s) => `• ${s.chinese} (${s.english})`).join('\n');
 
-  const handlePracticeNow = () => {
+  const handlePracticeNow = async () => {
     const charId = selectedCharacter.id;
+    const deckId = selectedCharacter.deckId;
     setSelectedCharacter(null);
-    navigate(`/practice?forceChar=${encodeURIComponent(charId)}`);
+    const queue = await generatePracticeQueue(deckId, { guaranteedCharacterId: charId });
+    usePracticeStore.getState().startSession(queue);
+    navigate('/practice');
   };
 
   return (

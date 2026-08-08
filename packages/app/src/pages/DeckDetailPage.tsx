@@ -5,6 +5,7 @@ import { getDeckCharacters } from '../db/queries';
 import { db } from '../db/schema';
 import { useDeckStore } from '../stores/deckStore';
 import { DeckListView } from '../components/deck/DeckListView';
+import { ConstellationCanvas } from '../components/constellation/ConstellationCanvas';
 import { CharacterDetailModal } from '../components/deck/CharacterDetailModal';
 import { ArrowLeft, List, Share2 } from 'lucide-react';
 
@@ -106,18 +107,12 @@ export const DeckDetailPage: React.FC = () => {
       </div>
 
       {/* Main View Content */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
         {viewMode === 'list' ? (
           <DeckListView characters={characters || []} />
         ) : (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-            <Share2 size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-            <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Constellation Network Graph
-            </div>
-            <div style={{ fontSize: 13, marginTop: 6, maxWidth: 280, margin: '6px auto 0' }}>
-              Interactive node graph with orbital physics & mastery filters coming in Phase 2!
-            </div>
+          <div style={{ flex: 1, minHeight: 'calc(100vh - 120px)' }}>
+            <ConstellationCanvas characters={characters || []} />
           </div>
         )}
       </div>

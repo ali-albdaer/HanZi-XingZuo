@@ -38,3 +38,10 @@ export const APP_CONFIG = {
 
 export type SortOption = 'frequency' | 'alphabetical' | 'mastery' | 'radical';
 export type MasteryLevel = 'grey' | 'bronze' | 'silver' | 'gold';
+
+export const MASTERY_COLORS: Record<MasteryLevel, string> = {
+  grey: APP_CONFIG.mastery.colors.grey,
+  bronze: APP_CONFIG.mastery.colors.bronze,
+  silver: APP_CONFIG.mastery.colors.silver,
+  gold: APP_CONFIG.mastery.colors.gold,
+};

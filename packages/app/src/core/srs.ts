@@ -1,7 +1,34 @@
 import { APP_CONFIG, type MasteryLevel } from '../config/app.config';
-import type { UserProgressEntity } from '../db/schema';
+import { db, type UserProgressEntity } from '../db/schema';
 
-export function calculateEffectiveMastery(progress: UserProgressEntity, now: number = Date.now()): MasteryLevel {
+export function isMasteryDecayed(
+  mastery: MasteryLevel,
+  lastReviewedAt: number | null,
+  now: number = Date.now()
+): boolean {
+  if (mastery === 'grey' || !lastReviewedAt) {
+    return false;
+  }
+
+  const elapsedHours = (now - lastReviewedAt) / (1000 * 60 * 60);
+
+  if (mastery === 'gold') {
+    return elapsedHours > APP_CONFIG.mastery.decayHours.goldToSilver;
+  }
+  if (mastery === 'silver') {
+    return elapsedHours > APP_CONFIG.mastery.decayHours.silverToBronze;
+  }
+  if (mastery === 'bronze') {
+    return elapsedHours > APP_CONFIG.mastery.decayHours.bronzeToGrey;
+  }
+
+  return false;
+}
+
+export function calculateEffectiveMastery(
+  progress: UserProgressEntity,
+  now: number = Date.now()
+): MasteryLevel {
   const { mastery, lastReviewedAt } = progress;
 
   if (mastery === 'grey' || !lastReviewedAt) {
@@ -37,7 +64,7 @@ export function calculateEffectiveMastery(progress: UserProgressEntity, now: num
 export function recordExerciseResult(
   currentProgress: UserProgressEntity,
   isCorrect: boolean,
-  isKeyboardMode: boolean,
+  isKeyboardMode: boolean = false,
   now: number = Date.now()
 ): UserProgressEntity {
   const keyboardCleared = currentProgress.keyboardCleared || (isCorrect && isKeyboardMode);
@@ -45,7 +72,7 @@ export function recordExerciseResult(
   if (!isCorrect) {
     return {
       ...currentProgress,
-      mastery: 'bronze', // Demote to bronze on error
+      mastery: 'bronze',
       correctStreak: 0,
       totalReviews: currentProgress.totalReviews + 1,
       lastReviewedAt: now,
@@ -72,4 +99,25 @@ export function recordExerciseResult(
     lastReviewedAt: now,
     keyboardCleared,
   };
+}
+
+export async function saveExerciseResult(
+  characterId: string,
+  deckId: string,
+  isCorrect: boolean,
+  isKeyboardMode: boolean = false
+): Promise<UserProgressEntity> {
+  const existing = (await db.userProgress.get(characterId)) || {
+    characterId,
+    deckId,
+    mastery: 'grey',
+    lastReviewedAt: null,
+    correctStreak: 0,
+    totalReviews: 0,
+    keyboardCleared: false,
+  };
+
+  const updated = recordExerciseResult(existing, isCorrect, isKeyboardMode);
+  await db.userProgress.put(updated);
+  return updated;
 }
