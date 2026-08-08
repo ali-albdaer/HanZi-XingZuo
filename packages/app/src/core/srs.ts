@@ -4,7 +4,8 @@ import { db, type UserProgressEntity } from '../db/schema';
 export function isMasteryDecayed(
   mastery: MasteryLevel,
   lastReviewedAt: number | null,
-  now: number = Date.now()
+  now: number = Date.now(),
+  multiplier: number = 3.0 // Default 3x spacing for reduced repetition
 ): boolean {
   if (mastery === 'grey' || !lastReviewedAt) {
     return false;
@@ -13,13 +14,13 @@ export function isMasteryDecayed(
   const elapsedHours = (now - lastReviewedAt) / (1000 * 60 * 60);
 
   if (mastery === 'gold') {
-    return elapsedHours > APP_CONFIG.mastery.decayHours.goldToSilver;
+    return elapsedHours > APP_CONFIG.mastery.decayHours.goldToSilver * multiplier;
   }
   if (mastery === 'silver') {
-    return elapsedHours > APP_CONFIG.mastery.decayHours.silverToBronze;
+    return elapsedHours > APP_CONFIG.mastery.decayHours.silverToBronze * multiplier;
   }
   if (mastery === 'bronze') {
-    return elapsedHours > APP_CONFIG.mastery.decayHours.bronzeToGrey;
+    return elapsedHours > APP_CONFIG.mastery.decayHours.bronzeToGrey * multiplier;
   }
 
   return false;

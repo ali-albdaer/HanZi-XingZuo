@@ -4,6 +4,8 @@ import { getDeckCharacters } from '../db/queries';
 import { isMasteryDecayed } from './srs';
 import { generateClozeDistractors } from './distractors';
 
+import { useSettingsStore } from '../stores/settingsStore';
+
 export type ExerciseType = 'magnet' | 'cloze';
 
 export interface ExerciseItem {
@@ -39,6 +41,10 @@ export async function generatePracticeQueue(
   });
 
   const now = Date.now();
+  const { repetitionFrequency } = useSettingsStore.getState();
+  let multiplier = 3.0; // Default Low repetition: 3x longer review intervals!
+  if (repetitionFrequency === 'balanced') multiplier = 1.0;
+  if (repetitionFrequency === 'high') multiplier = 0.5;
 
   // Partition characters into due SRS reviews vs unseen progression
   const dueReviews: typeof allChars = [];
@@ -51,7 +57,8 @@ export async function generatePracticeQueue(
       const isDecayed = isMasteryDecayed(
         item.progress.mastery,
         item.progress.lastReviewedAt,
-        now
+        now,
+        multiplier
       );
 
       if (isDecayed) {
