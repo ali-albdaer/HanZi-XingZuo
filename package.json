@@ -1,0 +1,13 @@
+{
+  "name": "hanzi-xingzuo-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=packages/app",
+    "build": "npm run build --workspace=packages/app",
+    "test": "npm run test --workspaces --if-present",
+    "data:build": "npm run build-seed --workspace=packages/data-scripts"
+  }
+}

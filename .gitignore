@@ -1,1 +1,8 @@
+node_modules
+dist
+.vite
+packages/data-scripts/data
+packages/data-scripts/output
 local/
+.DS_Store
+*.log

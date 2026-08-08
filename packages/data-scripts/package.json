@@ -1,0 +1,9 @@
+{
+  "name": "data-scripts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build-seed": "python scripts/build_seed.py"
+  }
+}
