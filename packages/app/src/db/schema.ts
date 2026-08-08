@@ -47,7 +47,7 @@ export class HanZiDatabase extends Dexie {
 
   constructor() {
     super('HanZiXingZuoDB');
-    this.version(2).stores({
+    this.version(3).stores({
       decks: 'id, name, isBuiltIn',
       characters: 'id, deckId, frequency, radical',
       sentences: 'id, characterId, deckId',

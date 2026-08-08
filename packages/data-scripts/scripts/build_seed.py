@@ -5,6 +5,7 @@ import gzip
 import bz2
 import io
 import zipfile
+import re
 import requests
 import jieba
 from pypinyin import pinyin, Style
@@ -58,6 +59,26 @@ def get_subtlex_top1000():
     print(f"[SUBTLEX-CH] Loaded top {len(top_chars)} characters.")
     return top_chars
 
+NOISE_RE = re.compile(
+    r'^(used in|variant of|old variant of|archaic variant of|surname|see|same as|CL:|abbr\. for|component in|radical in|classifier|often used in|Tw\))|\b(used in transliterations|surname|transliteration|classifier)\b',
+    re.IGNORECASE
+)
+
+def clean_def_text(d: str) -> str:
+    d = re.sub(r'\[[a-zA-Z0-9\s]+\]', '', d)
+    d = re.sub(r'[\u4e00-\u9fff]+\|[\u4e00-\u9fff]+', '', d)
+    d = re.sub(r'\(bound form\)', '', d)
+    d = re.sub(r'\s+', ' ', d).strip(' ;,()')
+    return d
+
+def is_duplicate_meaning(new_def: str, existing_defs: list[str]) -> bool:
+    new_norm = re.sub(r'[^a-zA-Z0-9]', '', new_def.lower())
+    for ex in existing_defs:
+        ex_norm = re.sub(r'[^a-zA-Z0-9]', '', ex.lower())
+        if new_norm in ex_norm or ex_norm in new_norm:
+            return True
+    return False
+
 def get_cedict_dictionary():
     url = "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz"
     gz_path = download_file(url, "cedict.txt.gz")
@@ -69,7 +90,6 @@ def get_cedict_dictionary():
             if not line or line.startswith('#'):
                 continue
             
-            # Format: Trad Simp [pinyin] /def 1/def 2/
             try:
                 before_slash, slashes = line.split('/', 1)
                 trad_simp, pinyin_part = before_slash.split('[')
@@ -81,19 +101,24 @@ def get_cedict_dictionary():
                 defs = [d.strip() for d in slashes.split('/') if d.strip()]
                 formatted_pinyin = convert_pinyin_str(pinyin_raw)
                 
-                if simp not in dict_map:
-                    dict_map[simp] = {
-                        'pinyin': [formatted_pinyin],
-                        'definitions': defs[:3] # Keep top 3 concise defs
-                    }
-                else:
-                    # Append unique pinyin if multi-phonic
-                    if formatted_pinyin not in dict_map[simp]['pinyin']:
-                        dict_map[simp]['pinyin'].append(formatted_pinyin)
+                valid_defs = []
+                for d in defs:
+                    if not NOISE_RE.search(d):
+                        cleaned = clean_def_text(d)
+                        if cleaned and len(cleaned) > 1 and not NOISE_RE.search(cleaned):
+                            valid_defs.append(cleaned)
+                            
+                if valid_defs:
+                    if simp not in dict_map:
+                        dict_map[simp] = []
+                    dict_map[simp].append({
+                        'pinyin': formatted_pinyin,
+                        'definitions': valid_defs
+                    })
             except Exception:
                 continue
                 
-    print(f"[CC-CEDICT] Loaded dictionary for {len(dict_map)} simplified words.")
+    print(f"[CC-CEDICT] Loaded clean dictionary entries for {len(dict_map)} simplified words.")
     return dict_map
 
 def get_makemeahanzi_data():
@@ -114,8 +139,8 @@ def get_makemeahanzi_data():
             
             radical = data.get("radical", "")
             decomp = data.get("decomposition", "")
+            py_list = [convert_pinyin_str(p) for p in data.get("pinyin", [])]
             
-            # Extract components from decomposition string excluding structural operators
             components = []
             for c in decomp:
                 if c not in struct_ops and c != char and '\u4e00' <= c <= '\u9fff':
@@ -124,7 +149,9 @@ def get_makemeahanzi_data():
             
             hanzi_map[char] = {
                 'radical': radical,
-                'components': components
+                'components': components,
+                'definition': data.get("definition", ""),
+                'pinyin': py_list
             }
             
     print(f"[MakeMeAHanzi] Loaded metadata for {len(hanzi_map)} characters.")
@@ -258,31 +285,50 @@ def main():
     sent_id_counter = 1
     
     for idx, char in enumerate(top1000_chars):
-        ced = cedict_map.get(char, {
-            'pinyin': ['yī'],
-            'definitions': ['character']
-        })
-        meta = hanzi_meta.get(char, {
-            'radical': '',
-            'components': []
-        })
+        m = hanzi_meta.get(char, {})
+        ce = cedict_map.get(char, [])
         
+        pinyins = []
+        if m.get('pinyin'):
+            for py in m['pinyin']:
+                if py and py not in pinyins:
+                    pinyins.append(py)
+        for entry in ce:
+            py = entry['pinyin']
+            if py and py not in pinyins and len(pinyins) < 2:
+                pinyins.append(py)
+        if not pinyins:
+            pinyins = ['yī']
+            
+        defs = []
+        if m.get('definition'):
+            for part in m['definition'].split(';'):
+                cleaned = clean_def_text(part)
+                if cleaned and not NOISE_RE.search(cleaned) and not is_duplicate_meaning(cleaned, defs):
+                    defs.append(cleaned)
+        for entry in ce:
+            for d in entry['definitions']:
+                if len(defs) < 3 and not NOISE_RE.search(d) and not is_duplicate_meaning(d, defs):
+                    defs.append(d)
+        if not defs:
+            defs = [char]
+            
         # Characters in deck
         characters_out.append({
             "id": char,
             "deckId": "top-1000",
-            "pinyin": ced['pinyin'],
-            "definitions": ced['definitions'],
+            "pinyin": pinyins,
+            "definitions": defs,
             "frequency": idx + 1, # 1-1000
-            "components": meta['components'],
-            "radical": meta['radical']
+            "components": m.get('components', []),
+            "radical": m.get('radical', '')
         })
         
         # Sentences
         sents = char_to_sentences[char]
         if len(sents) < 3:
-            first_def = ced['definitions'][0] if ced['definitions'] else char
-            first_py = ced['pinyin'][0] if ced['pinyin'] else ''
+            first_def = defs[0] if defs else char
+            first_py = pinyins[0] if pinyins else ''
             fallbacks = generate_fallback_sentences(char, first_py, first_def)
             for fb in fallbacks:
                 if len(sents) < 3 and not any(s['chinese'] == fb['chinese'] for s in sents):
