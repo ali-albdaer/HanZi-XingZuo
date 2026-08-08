@@ -1,17 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { getDeckCharacters } from '../db/queries';
+import { getAllDecks, getDeckCharacters, deleteCustomDeck } from '../db/queries';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../stores/deckStore';
-import { BookOpen, Vault, Sparkles, ChevronRight } from 'lucide-react';
+import { BookOpen, Vault, Sparkles, ChevronRight, Plus, Trash2, FileText } from 'lucide-react';
 import { APP_CONFIG } from '../config/app.config';
+import { CreateDeckModal } from '../components/vault/CreateDeckModal';
 
 export const DecksPage: React.FC = () => {
+  const navigate = useNavigate();
+  const setActiveDeckId = useDeckStore((s) => s.setActiveDeckId);
+
+  const allDecks = useLiveQuery(() => getAllDecks(), []);
   const top1000Chars = useLiveQuery(() => getDeckCharacters('top-1000'), []);
   const vaultChars = useLiveQuery(() => getDeckCharacters('my-vault'), []);
 
-  const setActiveDeckId = useDeckStore((s) => s.setActiveDeckId);
-  const navigate = useNavigate();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const getMasteryStats = (chars: typeof top1000Chars) => {
     if (!chars) return { total: 0, gold: 0, silver: 0, bronze: 0, grey: 0 };
@@ -33,23 +37,53 @@ export const DecksPage: React.FC = () => {
     navigate(`/decks/${deckId}`);
   };
 
+  const handleDeleteDeck = async (e: React.MouseEvent, deckId: string) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this custom deck?')) {
+      await deleteCustomDeck(deckId);
+    }
+  };
+
+  const customDecks = allDecks?.filter((d) => d.id !== 'top-1000' && d.id !== 'my-vault') || [];
+
   return (
-    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* App Branding Header */}
-      <div style={{ marginTop: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Sparkles size={24} style={{ color: 'var(--accent-cyan)' }} />
-          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>
-            HanZi XingZuo
-          </h1>
+    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
+      {/* App Branding Header + Create Deck Button */}
+      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Sparkles size={24} style={{ color: 'var(--accent-cyan)' }} />
+            <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.5 }}>
+              HanZi XingZuo
+            </h1>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+            Contextual reading & constellation mastery
+          </p>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          Contextual reading & constellation mastery
-        </p>
+
+        <button
+          onClick={() => setShowCreateModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '8px 14px',
+            borderRadius: 12,
+            background: 'var(--accent-cyan)',
+            color: '#000',
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          <Plus size={16} />
+          <span>Import Text</span>
+        </button>
       </div>
 
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        Available Decks
+        Curated Decks
       </div>
 
       {/* Deck Cards */}
@@ -156,6 +190,76 @@ export const DecksPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* User Custom Decks Section */}
+      {customDecks.length > 0 && (
+        <>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 8 }}>
+            My Custom Decks ({customDecks.length})
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {customDecks.map((deck) => (
+              <div
+                key={deck.id}
+                onClick={() => handleSelectDeck(deck.id)}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 16,
+                  padding: 16,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: 'rgba(0, 229, 255, 0.1)',
+                      color: 'var(--accent-cyan)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>{deck.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {deck.description}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={(e) => handleDeleteDeck(e, deck.id)}
+                    title="Delete Custom Deck"
+                    style={{
+                      padding: 6,
+                      borderRadius: 8,
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                  <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Create Deck Modal */}
+      {showCreateModal && <CreateDeckModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 };

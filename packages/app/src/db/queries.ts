@@ -133,3 +133,46 @@ export async function addCharacterToVault(
     }
   }
 }
+
+export async function createCustomDeckFromText(
+  title: string,
+  description: string,
+  rawText: string
+): Promise<string> {
+  const { normalizeTextToDeck } = await import('../core/normalization');
+
+  const deckId = `deck-custom-${Date.now()}`;
+  const normalized = await normalizeTextToDeck(deckId, title, description, rawText);
+
+  await db.transaction('rw', [db.decks, db.characters, db.sentences, db.userProgress], async () => {
+    await db.decks.add(normalized.deck);
+    await db.characters.bulkPut(normalized.characters);
+    await db.sentences.bulkPut(normalized.sentences);
+
+    // Initialize progress for custom deck characters
+    const progressList: UserProgressEntity[] = normalized.characters.map((c) => ({
+      characterId: c.id,
+      deckId,
+      mastery: 'grey',
+      lastReviewedAt: null,
+      correctStreak: 0,
+      totalReviews: 0,
+      keyboardCleared: false,
+    }));
+
+    await db.userProgress.bulkPut(progressList);
+  });
+
+  return deckId;
+}
+
+export async function deleteCustomDeck(deckId: string): Promise<void> {
+  if (deckId === 'top-1000') return;
+
+  await db.transaction('rw', [db.decks, db.characters, db.sentences, db.userProgress], async () => {
+    await db.decks.delete(deckId);
+    await db.characters.where('deckId').equals(deckId).delete();
+    await db.sentences.where('deckId').equals(deckId).delete();
+    await db.userProgress.where('deckId').equals(deckId).delete();
+  });
+}
