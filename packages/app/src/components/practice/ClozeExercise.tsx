@@ -92,88 +92,98 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [submitted, preferredClozeMode, keyboardInput, options, isCorrect]);
 
+  const [peekedOptionId, setPeekedOptionId] = useState<string | null>(null);
+
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        justifyContent: 'space-between',
-        padding: '8px 0 12px',
+        justifyContent: 'center',
+        gap: 16,
         boxSizing: 'border-box',
       }}
     >
-      {/* Header: Mode Switcher */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 }}>
-          <div
-            style={{
-              display: 'flex',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: 10,
-              padding: 2,
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            <button
-              onClick={() => setClozeMode('selection')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 10px',
-                borderRadius: 8,
-                border: 'none',
-                background: preferredClozeMode === 'selection' ? 'var(--accent-cyan)' : 'transparent',
-                color: preferredClozeMode === 'selection' ? '#000' : 'var(--text-muted)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <Grid size={13} />
-              <span>Choice</span>
-            </button>
-
-            <button
-              onClick={() => setClozeMode('keyboard')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 10px',
-                borderRadius: 8,
-                border: 'none',
-                background: preferredClozeMode === 'keyboard' ? 'var(--accent-cyan)' : 'transparent',
-                color: preferredClozeMode === 'keyboard' ? '#000' : 'var(--text-muted)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <Keyboard size={13} />
-              <span>Keyboard</span>
-            </button>
-          </div>
+      {/* Top Header Mode Toggle */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingBottom: 4,
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
+          Cloze Active Recall
         </div>
 
-        {/* English Prompt & Cloze Sentence Box */}
         <div
           style={{
-            background: 'rgba(255, 255, 255, 0.03)',
+            display: 'flex',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            borderRadius: 10,
+            padding: 3,
             border: '1px solid var(--border-color)',
-            borderRadius: 16,
-            padding: '14px 18px',
-            textAlign: 'center',
-            marginBottom: 8,
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
-            {sentence.english}
-          </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent-cyan)', lineHeight: 1.4 }}>
-            {clozeSentence}
-          </div>
+          <button
+            onClick={() => setClozeMode('selection')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 10px',
+              borderRadius: 8,
+              border: 'none',
+              background: preferredClozeMode === 'selection' ? 'var(--accent-cyan)' : 'transparent',
+              color: preferredClozeMode === 'selection' ? '#000' : 'var(--text-muted)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Grid size={13} />
+            <span>Choice</span>
+          </button>
+
+          <button
+            onClick={() => setClozeMode('keyboard')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 10px',
+              borderRadius: 8,
+              border: 'none',
+              background: preferredClozeMode === 'keyboard' ? 'var(--accent-cyan)' : 'transparent',
+              color: preferredClozeMode === 'keyboard' ? '#000' : 'var(--text-muted)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <Keyboard size={13} />
+            <span>Keyboard</span>
+          </button>
+        </div>
+      </div>
+
+      {/* English Prompt & Cloze Sentence Box (Centered Vertically) */}
+      <div
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 18,
+          padding: '20px 22px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
+          {sentence.english}
+        </div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: 'var(--accent-cyan)', lineHeight: 1.4 }}>
+          {clozeSentence}
         </div>
       </div>
 
@@ -183,9 +193,8 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
           style={{
             background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
             border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
-            borderRadius: 12,
-            padding: '10px 14px',
-            margin: '4px 0',
+            borderRadius: 14,
+            padding: '12px 16px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
@@ -205,19 +214,20 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
       )}
 
       {/* Mode Controls & Option Grid */}
-      <div style={{ marginTop: 'auto' }}>
+      <div>
         {preferredClozeMode === 'selection' ? (
           /* Selection Mode Grid (4 Compact Option Cards) */
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: 10,
+              gap: 12,
             }}
           >
             {options.map((opt, idx) => {
               const isSelected = selectedOptionId === opt.id;
               const isTarget = opt.id === targetChar.id;
+              const isPeeked = peekedOptionId === opt.id;
 
               let btnBg = 'var(--bg-card)';
               let btnBorder = 'var(--border-color)';
@@ -233,34 +243,41 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
                   btnBorder = '#F44336';
                   btnColor = '#F44336';
                 }
+              } else if (isPeeked) {
+                btnBorder = 'var(--accent-cyan)';
+                btnBg = 'rgba(0, 229, 255, 0.08)';
               }
 
               return (
                 <button
                   key={opt.id}
                   onClick={() => handleSelectOption(opt)}
+                  onMouseEnter={() => setPeekedOptionId(opt.id)}
+                  onMouseLeave={() => setPeekedOptionId(null)}
+                  onTouchStart={() => setPeekedOptionId(opt.id)}
+                  onTouchEnd={() => setPeekedOptionId(null)}
                   disabled={submitted}
                   style={{
                     background: btnBg,
                     border: `1px solid ${btnBorder}`,
                     color: btnColor,
-                    borderRadius: 14,
-                    padding: '12px 0',
+                    borderRadius: 16,
+                    padding: '16px 0 14px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: submitted ? 'default' : 'pointer',
                     position: 'relative',
-                    transition: 'transform 0.15s ease, background 0.15s ease',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <span
                     style={{
                       position: 'absolute',
-                      top: 6,
-                      left: 10,
-                      fontSize: 10,
+                      top: 8,
+                      left: 12,
+                      fontSize: 11,
                       fontWeight: 700,
                       color: 'var(--text-muted)',
                       opacity: 0.6,
@@ -268,10 +285,20 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
                   >
                     [{idx + 1}]
                   </span>
-                  <span style={{ fontSize: 28, fontWeight: 600 }}>{opt.id}</span>
-                  <span style={{ fontSize: 12, color: 'var(--accent-cyan)', marginTop: 2 }}>
-                    {opt.pinyin[0]}
-                  </span>
+
+                  <span style={{ fontSize: 32, fontWeight: 600, lineHeight: 1.1 }}>{opt.id}</span>
+
+                  <div style={{ height: 18, marginTop: 4, display: 'flex', alignItems: 'center' }}>
+                    {isPeeked || submitted ? (
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-cyan)' }}>
+                        {opt.pinyin[0]}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', opacity: 0.4 }}>
+                        Hold to peek
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}

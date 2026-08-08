@@ -9,7 +9,12 @@
   --text-secondary: #9095A8;
   --text-muted: #626678;
 
-  --accent-cyan: #00E5FF;
+  --accent-cyan: #18e7ec;
+  --accent-cyan-hover: #47eff3;
+  --accent-cyan-muted: rgba(24, 231, 236, 0.6);
+  --accent-secondary: #55CCCC;
+  --accent-gradient: linear-gradient(135deg, #18e7ec, #0eabaf);
+  --accent-gradient-hover: linear-gradient(135deg, #47eff3, #12c4c8);
   --accent-purple: #7C4DFF;
   
   --mastery-grey: #4A4A5B;
@@ -193,12 +198,14 @@ button {
 
 /* Custom Scrollbar for scrollable lists */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(15, 18, 28, 0.6);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--accent-cyan);
   border-radius: 4px;
+  box-shadow: 0 0 8px var(--accent-cyan-muted);
 }

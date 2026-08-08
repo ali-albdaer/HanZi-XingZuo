@@ -8,6 +8,32 @@ interface SentenceMagnetProps {
   onComplete: (isCorrect: boolean) => void;
 }
 
+/**
+ * Maps a specific word block chunk (e.g. "近照" or "那") to its exact Pinyin syllables.
+ */
+function getChunkPinyin(chunkText: string, chinese: string, fullPinyin: string): string {
+  // Clean Chinese characters and pinyin tokens
+  const chars = chinese.replace(/[^\u4e00-\u9fa5]/g, '').split('');
+  const pyTokens = fullPinyin.split(/\s+/).filter(Boolean);
+
+  if (chars.length === pyTokens.length) {
+    const pyMap = new Map<string, string>();
+    chars.forEach((ch, idx) => {
+      pyMap.set(ch, pyTokens[idx]);
+    });
+
+    const result = chunkText
+      .split('')
+      .map((ch) => pyMap.get(ch) || '')
+      .filter(Boolean)
+      .join(' ');
+
+    if (result) return result;
+  }
+
+  return fullPinyin;
+}
+
 export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComplete }) => {
   const { sentence, character: targetChar } = exercise;
   const originalChunks = sentence.chunks;
@@ -18,24 +44,25 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
   const [submitted, setSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
 
+  // Hover / Touch Peek state for word blocks
+  const [peekedChunkId, setPeekedChunkId] = useState<number | null>(null);
+
   // Initialize shuffled bank
   useEffect(() => {
     const indexed = originalChunks.map((text, idx) => ({ id: idx, text }));
-    // Shuffle chunks
     const shuffled = [...indexed].sort(() => Math.random() - 0.5);
     setShuffledBank(shuffled);
     setSelectedIndices([]);
     setSubmitted(false);
     setIsCorrect(false);
+    setPeekedChunkId(null);
   }, [sentence]);
 
   const handleSelectChunk = (chunkId: number) => {
     if (submitted) return;
     if (selectedIndices.includes(chunkId)) {
-      // Unselect chunk
       setSelectedIndices(selectedIndices.filter((id) => id !== chunkId));
     } else {
-      // Add chunk to tray
       setSelectedIndices([...selectedIndices, chunkId]);
     }
   };
@@ -48,7 +75,6 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
   const handleSubmit = async () => {
     if (submitted || selectedIndices.length === 0) return;
 
-    // Check constructed sentence
     const constructedText = selectedIndices.map((id) => originalChunks[id]).join('');
     const targetText = sentence.chinese;
 
@@ -56,7 +82,6 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
     setIsCorrect(correct);
     setSubmitted(true);
 
-    // Record SRS exercise result in IndexedDB
     await saveExerciseResult(targetChar.id, targetChar.deckId, correct);
   };
 
@@ -64,7 +89,6 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
     onComplete(isCorrect);
   };
 
-  // Keyboard Enter listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -87,19 +111,23 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        justifyContent: 'space-between',
-        padding: '8px 0 12px',
+        justifyContent: 'center',
+        gap: 16,
         boxSizing: 'border-box',
       }}
     >
-      {/* Target prompt header */}
-      <div>
-        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+      {/* Target prompt header (Clean English Only - No Pinyin Leak) */}
+      <div
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid var(--border-color)',
+          borderRadius: 18,
+          padding: '20px 22px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>
           {sentence.english}
-        </div>
-
-        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          Reassemble the word blocks in correct grammatical order.
         </div>
       </div>
 
@@ -111,14 +139,14 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
           border: `2px dashed ${
             submitted
               ? isCorrect
-                ? 'var(--accent-green, #4CAF50)'
-                : 'var(--accent-red, #F44336)'
+                ? '#4CAF50'
+                : '#F44336'
               : selectedIndices.length > 0
               ? 'var(--accent-cyan)'
               : 'var(--border-color)'
           }`,
           borderRadius: 16,
-          padding: 10,
+          padding: 12,
           display: 'flex',
           flexWrap: 'wrap',
           gap: 8,
@@ -133,26 +161,65 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
             Tap word blocks below to build sentence
           </span>
         ) : (
-          selectedIndices.map((chunkId) => (
-            <button
-              key={`selected-${chunkId}`}
-              onClick={() => handleSelectChunk(chunkId)}
-              disabled={submitted}
-              style={{
-                background: 'rgba(0, 229, 255, 0.15)',
-                border: '1px solid var(--accent-cyan)',
-                color: 'var(--text-primary)',
-                padding: '7px 12px',
-                borderRadius: 10,
-                fontSize: 18,
-                fontWeight: 600,
-                cursor: submitted ? 'default' : 'pointer',
-                transition: 'transform 0.1s ease',
-              }}
-            >
-              {originalChunks[chunkId]}
-            </button>
-          ))
+          selectedIndices.map((chunkId) => {
+            const chunkText = originalChunks[chunkId];
+            const isPeeked = peekedChunkId === chunkId;
+            const chunkPy = getChunkPinyin(chunkText, sentence.chinese, sentence.pinyin);
+
+            return (
+              <div
+                key={`selected-${chunkId}`}
+                style={{ position: 'relative', display: 'inline-flex' }}
+              >
+                <button
+                  onClick={() => handleSelectChunk(chunkId)}
+                  onMouseEnter={() => setPeekedChunkId(chunkId)}
+                  onMouseLeave={() => setPeekedChunkId(null)}
+                  onTouchStart={() => setPeekedChunkId(chunkId)}
+                  onTouchEnd={() => setPeekedChunkId(null)}
+                  disabled={submitted}
+                  style={{
+                    background: isPeeked ? 'rgba(0, 229, 255, 0.25)' : 'rgba(0, 229, 255, 0.15)',
+                    border: '1px solid var(--accent-cyan)',
+                    color: 'var(--text-primary)',
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    fontSize: 18,
+                    fontWeight: 600,
+                    cursor: submitted ? 'default' : 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {chunkText}
+                </button>
+
+                {/* Floating Tooltip displaying ONLY the hovered chunk's Pinyin NEXT to the button */}
+                {isPeeked && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%) translateY(-6px)',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--accent-cyan)',
+                      color: 'var(--accent-cyan)',
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none',
+                      zIndex: 10,
+                    }}
+                  >
+                    {chunkPy}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
 
         {selectedIndices.length > 0 && !submitted && (
@@ -181,8 +248,8 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
           style={{
             background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
             border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
-            borderRadius: 12,
-            padding: '10px 14px',
+            borderRadius: 14,
+            padding: '12px 16px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
@@ -203,30 +270,76 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
 
       {/* Word Chunk Bank */}
       {!submitted && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
           {shuffledBank.map((item) => {
             const isUsed = selectedIndices.includes(item.id);
+            const isPeeked = peekedChunkId === item.id;
+            const chunkPy = getChunkPinyin(item.text, sentence.chinese, sentence.pinyin);
+
             return (
-              <button
+              <div
                 key={`bank-${item.id}`}
-                onClick={() => handleSelectChunk(item.id)}
-                disabled={isUsed}
-                style={{
-                  background: isUsed ? 'rgba(255, 255, 255, 0.02)' : 'var(--bg-card)',
-                  border: `1px solid ${isUsed ? 'transparent' : 'var(--border-color)'}`,
-                  color: isUsed ? 'transparent' : 'var(--text-primary)',
-                  padding: '9px 14px',
-                  borderRadius: 12,
-                  fontSize: 19,
-                  fontWeight: 600,
-                  cursor: isUsed ? 'default' : 'pointer',
-                  opacity: isUsed ? 0.2 : 1,
-                  boxShadow: isUsed ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
-                  transition: 'opacity 0.15s ease, transform 0.15s ease',
-                }}
+                style={{ position: 'relative', display: 'inline-flex' }}
               >
-                {item.text}
-              </button>
+                <button
+                  onClick={() => handleSelectChunk(item.id)}
+                  onMouseEnter={() => setPeekedChunkId(item.id)}
+                  onMouseLeave={() => setPeekedChunkId(null)}
+                  onTouchStart={() => setPeekedChunkId(item.id)}
+                  onTouchEnd={() => setPeekedChunkId(null)}
+                  disabled={isUsed}
+                  style={{
+                    background: isUsed
+                      ? 'rgba(255, 255, 255, 0.02)'
+                      : isPeeked
+                      ? 'rgba(0, 229, 255, 0.1)'
+                      : 'var(--bg-card)',
+                    border: `1px solid ${
+                      isUsed
+                        ? 'transparent'
+                        : isPeeked
+                        ? 'var(--accent-cyan)'
+                        : 'var(--border-color)'
+                    }`,
+                    color: isUsed ? 'transparent' : 'var(--text-primary)',
+                    padding: '10px 16px',
+                    borderRadius: 12,
+                    fontSize: 20,
+                    fontWeight: 600,
+                    cursor: isUsed ? 'default' : 'pointer',
+                    opacity: isUsed ? 0.2 : 1,
+                    boxShadow: isUsed ? 'none' : '0 2px 8px rgba(0,0,0,0.3)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {item.text}
+                </button>
+
+                {/* Floating Tooltip displaying ONLY the hovered chunk's Pinyin directly ABOVE the button */}
+                {isPeeked && !isUsed && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%) translateY(-6px)',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--accent-cyan)',
+                      color: 'var(--accent-cyan)',
+                      padding: '3px 8px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none',
+                      zIndex: 10,
+                    }}
+                  >
+                    {chunkPy}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

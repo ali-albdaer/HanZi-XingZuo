@@ -6,7 +6,7 @@ interface HskBadgeProps {
 }
 
 const HSK_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  '1': { bg: 'rgba(0, 229, 255, 0.15)', color: '#00E5FF', border: 'rgba(0, 229, 255, 0.35)' },
+  '1': { bg: 'rgba(24, 231, 236, 0.15)', color: '#18e7ec', border: 'rgba(24, 231, 236, 0.35)' },
   '2': { bg: 'rgba(76, 175, 80, 0.15)', color: '#4CAF50', border: 'rgba(76, 175, 80, 0.35)' },
   '3': { bg: 'rgba(255, 193, 7, 0.15)', color: '#FFC107', border: 'rgba(255, 193, 7, 0.35)' },
   '4': { bg: 'rgba(255, 152, 0, 0.15)', color: '#FF9800', border: 'rgba(255, 152, 0, 0.35)' },

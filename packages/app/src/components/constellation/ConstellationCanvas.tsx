@@ -472,22 +472,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         // Quick depth sort using simple bucket / insertion for 1000 items
         globNodes.sort((a, b) => a.z2 - b.z2);
 
-        // Batch Draw 3D Globe Web Edges
-        ctx.beginPath();
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
-        ctx.lineWidth = 1;
-        for (let i = 0; i < total; i += 6) {
-          const p1 = globNodes[i];
-          if (p1.z2 < -100) continue;
-          for (let j = i + 1; j < Math.min(i + 4, total); j++) {
-            const p2 = globNodes[j];
-            ctx.moveTo(p1.px, p1.py);
-            ctx.lineTo(p2.px, p2.py);
-          }
-        }
-        ctx.stroke();
-
-        // Draw 3D Globe Nodes
+        // Draw 3D Globe Nodes (No unnecessary line connections)
         for (let i = 0; i < total; i++) {
           const node = globNodes[i];
           const color = MASTERY_COLORS[node.mastery];
