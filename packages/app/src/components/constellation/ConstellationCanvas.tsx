@@ -21,14 +21,9 @@ interface ConstellationNode {
   // Base coordinates
   baseX: number;
   baseY: number;
-  // Current dynamic coordinates (base + low-frequency oscillation)
+  // Current dynamic coordinates (base + oscillation)
   x: number;
   y: number;
-  // Animation interpolation start/end
-  startX?: number;
-  startY?: number;
-  targetX?: number;
-  targetY?: number;
   // Oscillation parameters
   oscPhaseX: number;
   oscPhaseY: number;
@@ -38,11 +33,10 @@ interface ConstellationNode {
 interface ConstellationLink {
   source: string;
   target: string;
-  level: number; // 1 = center to primary, 2 = inter-primary or secondary
+  level: number;
 }
 
-// Low-frequency oscillation constants (Tunable)
-const MAX_OSCILLATION_PX = 6.0;
+const MAX_OSCILLATION_PX = 5.0;
 
 export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
   characters,
@@ -50,21 +44,26 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
+  const setViewMode = useDeckStore((s) => s.setViewMode);
 
   const [focusedCharId, setFocusedCharId] = useState<string>(characters[0]?.id || '我');
 
-  // Camera Pan & Zoom state (Seamless Game Map Movement)
-  const [panX, setPanX] = useState<number>(0);
-  const [panY, setPanY] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1);
+  // Camera Pan & Zoom stored in Refs to decouple 60fps canvas dragging from React re-render lag
+  const panRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const scaleRef = useRef<number>(1);
+
+  // 3D Globe Trackball Rotation Angles (Show All Mode)
+  const globeRotRef = useRef<{ x: number; y: number }>({ x: 0.2, y: 0 });
 
   // Dragging state
   const isDraggingRef = useRef(false);
-  const startDragRef = useRef<{ x: number; y: number; panX: number; panY: number }>({
+  const startDragRef = useRef<{ x: number; y: number; panX: number; panY: number; rotX: number; rotY: number }>({
     x: 0,
     y: 0,
     panX: 0,
     panY: 0,
+    rotX: 0,
+    rotY: 0,
   });
 
   // Smooth Node Swap Animation State
@@ -100,7 +99,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
 
   // Build Topology Graph for Focused Character
   const graphData = useMemo(() => {
-    if (!focusedChar) return { nodes: [], links: [] };
+    if (!focusedChar) return { rawNodes: [], links: [] };
 
     const centerComps = new Set([...focusedChar.components, focusedChar.radical].filter(Boolean));
 
@@ -128,7 +127,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     primary.forEach((p) => {
       links.push({ source: focusedChar.id, target: p.id, level: 1 });
 
-      // Find Secondary (Level 2) outer neighbors connected to this Primary node
+      // Secondary (Level 2) outer neighbors connected to Primary node
       const pComps = new Set([...p.components, p.radical].filter(Boolean));
       const sCandidates = characters.filter((c) => {
         if (c.id === focusedChar.id || primaryIds.has(c.id)) return false;
@@ -163,7 +162,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     return { rawNodes, links };
   }, [characters, focusedChar, activeFilters]);
 
-  // Main Render Loop with Dynamic Oscillation, 3D Glob, & Smooth Node Swap Animation
+  // Main 60fps Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -187,7 +186,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // Calculate base layout coordinates for Orbit graph
+    // Build static base position mapping for Orbit graph
     const nodesMap = new Map<string, ConstellationNode>();
 
     if (initialMode === 'orbit') {
@@ -206,7 +205,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         y: centerY,
         oscPhaseX: Math.random() * Math.PI * 2,
         oscPhaseY: Math.random() * Math.PI * 2,
-        oscSpeed: 0.6 + Math.random() * 0.4,
+        oscSpeed: 0.5,
       });
 
       // Level 1 Primary Ring
@@ -233,7 +232,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           y: by,
           oscPhaseX: Math.random() * Math.PI * 2,
           oscPhaseY: Math.random() * Math.PI * 2,
-          oscSpeed: 0.5 + Math.random() * 0.5,
+          oscSpeed: 0.45,
         });
       });
 
@@ -261,20 +260,18 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           y: by,
           oscPhaseX: Math.random() * Math.PI * 2,
           oscPhaseY: Math.random() * Math.PI * 2,
-          oscSpeed: 0.4 + Math.random() * 0.4,
+          oscSpeed: 0.4,
         });
       });
     }
 
-    // 3D Glob Simulation Nodes for Show All Mode
-    let globAngle = 0;
+    // 3D Fibonacci Sphere Nodes for Interactive Globe Mode (Show All)
     const globNodes: { id: string; pinyin: string; mastery: MasteryLevel; rx: number; ry: number; rz: number }[] = [];
 
     if (initialMode === 'showAll') {
       const visibleChars = characters.filter((c) => activeFilters[c.progress.mastery]);
-      const radius = Math.min(width, height) * 0.38;
+      const radius = Math.min(width, height) * 0.36;
 
-      // Fibonacci sphere layout for 3D Glob galaxy
       const phi = (1 + Math.sqrt(5)) / 2;
       const total = visibleChars.length;
 
@@ -298,6 +295,8 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
 
     const render = () => {
       const timeSec = Date.now() * 0.001;
+      const currentPan = panRef.current;
+      const currentScale = scaleRef.current;
 
       // Handle Smooth Swap Animation
       let swapEase = 1;
@@ -305,7 +304,6 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         const elapsed = Date.now() - swapAnimRef.current.startTime;
         const duration = swapAnimRef.current.duration;
         const progress = Math.min(1, elapsed / duration);
-        // Cubic ease-out
         swapEase = 1 - Math.pow(1 - progress, 3);
 
         if (progress >= 1) {
@@ -316,18 +314,17 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
       ctx.clearRect(0, 0, width, height);
 
       ctx.save();
-      // Apply Camera 2D Pan and Zoom Transform
-      ctx.translate(width / 2 + panX, height / 2 + panY);
-      ctx.scale(scale, scale);
+      // Apply Camera 2D Pan and Zoom Transform from Refs
+      ctx.translate(width / 2 + currentPan.x, height / 2 + currentPan.y);
+      ctx.scale(currentScale, currentScale);
       ctx.translate(-width / 2, -height / 2);
 
       if (initialMode === 'orbit') {
-        // Calculate dynamic low-frequency oscillating positions for all nodes
+        // Dynamic low-frequency oscillation calculation
         nodesMap.forEach((node) => {
           let bx = node.baseX;
           let by = node.baseY;
 
-          // Interpolate if swap animation is active
           if (swapAnimRef.current.animating) {
             const start = swapAnimRef.current.nodeStarts.get(node.id);
             const target = swapAnimRef.current.nodeTargets.get(node.id);
@@ -337,7 +334,6 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
             }
           }
 
-          // Low-frequency dynamic oscillation floating motion
           const oscX = MAX_OSCILLATION_PX * Math.sin(node.oscSpeed * timeSec + node.oscPhaseX);
           const oscY = MAX_OSCILLATION_PX * Math.cos(node.oscSpeed * timeSec * 0.8 + node.oscPhaseY);
 
@@ -345,7 +341,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           node.y = by + oscY;
         });
 
-        // 1. Draw Space Nebula Background Orbits
+        // Background Orbit Rings
         const r1 = Math.min(width, height) * 0.28;
         const r2 = Math.min(width, height) * 0.44;
 
@@ -363,7 +359,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // 2. Draw Links (Edges)
+        // Render Links (Edges)
         graphData.links.forEach((link) => {
           const n1 = nodesMap.get(link.source);
           const n2 = nodesMap.get(link.target);
@@ -374,12 +370,10 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
             ctx.lineTo(n2.x, n2.y);
 
             if (link.level === 1) {
-              // Solid glowing line for Center to Primary nodes
               ctx.strokeStyle = 'rgba(0, 229, 255, 0.55)';
               ctx.lineWidth = 2.2;
               ctx.setLineDash([]);
             } else {
-              // Foggy dashed line for secondary/inter-neighbor nodes
               ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
               ctx.lineWidth = 1.2;
               ctx.setLineDash([4, 4]);
@@ -390,7 +384,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           }
         });
 
-        // 3. Draw Nodes
+        // Render Nodes
         nodesMap.forEach((node) => {
           const color = MASTERY_COLORS[node.mastery];
           const isCenter = node.level === 0;
@@ -398,12 +392,11 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
 
           ctx.save();
           if (isSecondary) {
-            ctx.globalAlpha = 0.5; // Foggy outer atmosphere
+            ctx.globalAlpha = 0.5;
           }
 
           const radius = isCenter ? 36 : isSecondary ? 18 : 23;
 
-          // Node Circle
           ctx.beginPath();
           ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
           ctx.fillStyle = isCenter ? 'rgba(20, 26, 42, 0.95)' : 'rgba(15, 18, 28, 0.9)';
@@ -413,15 +406,13 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           ctx.lineWidth = isCenter ? 3.5 : 2;
           ctx.stroke();
 
-          // Chinese Character
           ctx.fillStyle = '#FFFFFF';
           ctx.font = `${isCenter ? '700 28px' : isSecondary ? '500 15px' : '600 18px'} Inter, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(node.id, node.x, node.y - (isSecondary ? 1 : 2));
 
-          // Pinyin Label
-          if (!isSecondary || scale >= 0.85) {
+          if (!isSecondary || currentScale >= 0.85) {
             ctx.fillStyle = 'var(--accent-cyan)';
             ctx.font = `${isCenter ? '600 12px' : '500 10px'} Inter, sans-serif`;
             ctx.fillText(node.pinyin, node.x, node.y + (isCenter ? 18 : 13));
@@ -430,51 +421,62 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           ctx.restore();
         });
       } else {
-        // 3D Glob Galaxy Sphere Mode (Show All)
-        globAngle += 0.003;
+        // Interactive 3D Globe Mode (Show All)
+        if (!isDraggingRef.current) {
+          // Slow idle auto-spin when user is not dragging
+          globeRotRef.current.y += 0.0012;
+        }
+
+        const rotX = globeRotRef.current.x;
+        const rotY = globeRotRef.current.y;
+
+        const cosX = Math.cos(rotX);
+        const sinX = Math.sin(rotX);
+        const cosY = Math.cos(rotY);
+        const sinY = Math.sin(rotY);
 
         const projected = globNodes.map((n) => {
-          // Rotate around Y axis
-          const cosA = Math.cos(globAngle);
-          const sinA = Math.sin(globAngle);
+          // Rotate Y axis
+          const x1 = n.rx * cosY - n.rz * sinY;
+          const z1 = n.rx * sinY + n.rz * cosY;
+          const y1 = n.ry;
 
-          const x3d = n.rx * cosA - n.rz * sinA;
-          const z3d = n.rx * sinA + n.rz * cosA;
-          const y3d = n.ry;
+          // Rotate X axis
+          const y2 = y1 * cosX - z1 * sinX;
+          const z2 = y1 * sinX + z1 * cosX;
+          const x2 = x1;
 
-          // Simple perspective projection
-          const perspective = 600;
-          const k = perspective / (perspective + z3d);
-          const px = centerX + x3d * k;
-          const py = centerY + y3d * k;
-          const pRadius = Math.max(8, 16 * k);
-          const alpha = Math.min(1, Math.max(0.2, (z3d + 300) / 600));
+          const perspective = 550;
+          const k = perspective / (perspective + z2);
+          const px = centerX + x2 * k;
+          const py = centerY + y2 * k;
+          const pRadius = Math.max(7, 15 * k);
+          const alpha = Math.min(1, Math.max(0.15, (z2 + 300) / 600));
 
-          return { ...n, px, py, pRadius, alpha, z3d };
+          return { ...n, px, py, pRadius, alpha, z2 };
         });
 
-        // Sort by Z for proper 3D depth rendering
-        projected.sort((a, b) => a.z3d - b.z3d);
+        projected.sort((a, b) => a.z2 - b.z2);
 
-        // Draw 3D Glob edges between close nodes
+        // Draw 3D Globe Web Edges
         for (let i = 0; i < projected.length; i += 4) {
-          for (let j = i + 1; j < Math.min(i + 6, projected.length); j++) {
+          for (let j = i + 1; j < Math.min(i + 5, projected.length); j++) {
             const p1 = projected[i];
             const p2 = projected[j];
             const dist = Math.hypot(p1.px - p2.px, p1.py - p2.py);
 
-            if (dist < 120) {
+            if (dist < 110) {
               ctx.beginPath();
               ctx.moveTo(p1.px, p1.py);
               ctx.lineTo(p2.px, p2.py);
-              ctx.strokeStyle = `rgba(0, 229, 255, ${0.12 * Math.min(p1.alpha, p2.alpha)})`;
+              ctx.strokeStyle = `rgba(0, 229, 255, ${0.1 * Math.min(p1.alpha, p2.alpha)})`;
               ctx.lineWidth = 1;
               ctx.stroke();
             }
           }
         }
 
-        // Draw 3D Glob Nodes
+        // Draw 3D Globe Nodes
         projected.forEach((node) => {
           const color = MASTERY_COLORS[node.mastery];
 
@@ -491,7 +493,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           ctx.stroke();
 
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `${Math.round(12 * (node.pRadius / 16))}px Inter, sans-serif`;
+          ctx.font = `${Math.round(11 * (node.pRadius / 15))}px Inter, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(node.id, node.px, node.py - 1);
@@ -510,16 +512,18 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [initialMode, focusedChar, graphData, activeFilters, panX, panY, scale]);
+  }, [initialMode, focusedChar, graphData, activeFilters]);
 
-  // Game Map Dragging Handlers
+  // Pointer / Touch Handlers for Dragging & 3D Globe Rotation
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     isDraggingRef.current = true;
     startDragRef.current = {
       x: e.clientX,
       y: e.clientY,
-      panX,
-      panY,
+      panX: panRef.current.x,
+      panY: panRef.current.y,
+      rotX: globeRotRef.current.x,
+      rotY: globeRotRef.current.y,
     };
   };
 
@@ -527,8 +531,20 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     if (!isDraggingRef.current) return;
     const dx = e.clientX - startDragRef.current.x;
     const dy = e.clientY - startDragRef.current.y;
-    setPanX(startDragRef.current.panX + dx / scale);
-    setPanY(startDragRef.current.panY + dy / scale);
+
+    if (initialMode === 'orbit') {
+      // 2D Camera Pan in Orbit Mode
+      panRef.current = {
+        x: startDragRef.current.panX + dx / scaleRef.current,
+        y: startDragRef.current.panY + dy / scaleRef.current,
+      };
+    } else {
+      // 3D Trackball Rotation in Show All Globe Mode
+      globeRotRef.current = {
+        x: startDragRef.current.rotX + dy * 0.005,
+        y: startDragRef.current.rotY + dx * 0.005,
+      };
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -547,11 +563,11 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
   const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newScale = Math.min(2.5, Math.max(0.4, scale * zoomFactor));
-    setScale(newScale);
+    const newScale = Math.min(2.5, Math.max(0.4, scaleRef.current * zoomFactor));
+    scaleRef.current = newScale;
   };
 
-  // Node Click Selection & Smooth Swap Animation
+  // Node Selection Handler
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -564,11 +580,11 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     const centerX = width / 2;
     const centerY = height / 2;
 
-    const worldX = (clickX - (width / 2 + panX)) / scale + width / 2;
-    const worldY = (clickY - (height / 2 + panY)) / scale + height / 2;
+    const worldX = (clickX - (width / 2 + panRef.current.x)) / scaleRef.current + width / 2;
+    const worldY = (clickY - (height / 2 + panRef.current.y)) / scaleRef.current + height / 2;
 
     if (initialMode === 'orbit') {
-      // Check center node tap -> open detail modal
+      // Check center node click -> open detail modal
       if (Math.hypot(worldX - centerX, worldY - centerY) <= 38 && focusedChar) {
         setSelectedCharacter(focusedChar);
         return;
@@ -607,6 +623,48 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           return;
         }
       }
+    } else {
+      // Show All Mode: Tapping a globe node centers it and switches to Orbit view!
+      const rotX = globeRotRef.current.x;
+      const rotY = globeRotRef.current.y;
+      const cosX = Math.cos(rotX);
+      const sinX = Math.sin(rotX);
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+      const radius = Math.min(width, height) * 0.36;
+
+      const visibleChars = characters.filter((c) => activeFilters[c.progress.mastery]);
+      const phi = (1 + Math.sqrt(5)) / 2;
+      const total = visibleChars.length;
+
+      for (let i = 0; i < total; i++) {
+        const c = visibleChars[i];
+        const theta = (2 * Math.PI * i) / phi;
+        const y = 1 - (i / (total - 1)) * 2;
+        const radiusAtY = Math.sqrt(1 - y * y);
+        const rx = Math.cos(theta) * radiusAtY * radius;
+        const ry = y * radius;
+        const rz = Math.sin(theta) * radiusAtY * radius;
+
+        const x1 = rx * cosY - rz * sinY;
+        const z1 = rx * sinY + rz * cosY;
+        const y1 = ry;
+        const y2 = y1 * cosX - z1 * sinX;
+        const z2 = y1 * sinX + z1 * cosX;
+
+        if (z2 > -100) {
+          const perspective = 550;
+          const k = perspective / (perspective + z2);
+          const px = centerX + x1 * k;
+          const py = centerY + y2 * k;
+
+          if (Math.hypot(worldX - px, worldY - py) <= 20) {
+            setFocusedCharId(c.id);
+            setViewMode('orbit');
+            return;
+          }
+        }
+      }
     }
   };
 
@@ -620,11 +678,9 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     const nodeStarts = new Map<string, { x: number; y: number }>();
     const nodeTargets = new Map<string, { x: number; y: number }>();
 
-    // Clicked node glides to center
     nodeStarts.set(clickedCharId, { x: clickedX, y: clickedY });
     nodeTargets.set(clickedCharId, { x: centerX, y: centerY });
 
-    // Former center node glides to clicked node's former position
     nodeStarts.set(focusedCharId, { x: centerX, y: centerY });
     nodeTargets.set(focusedCharId, { x: clickedX, y: clickedY });
 
@@ -642,9 +698,9 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
   };
 
   const handleResetCamera = () => {
-    setPanX(0);
-    setPanY(0);
-    setScale(1);
+    panRef.current = { x: 0, y: 0 };
+    scaleRef.current = 1;
+    globeRotRef.current = { x: 0.2, y: 0 };
   };
 
   const toggleFilter = (level: MasteryLevel) => {
@@ -697,7 +753,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           <span>Center</span>
         </button>
 
-        {focusedChar && (
+        {focusedChar && initialMode === 'orbit' && (
           <button
             onClick={() => setSelectedCharacter(focusedChar)}
             style={{

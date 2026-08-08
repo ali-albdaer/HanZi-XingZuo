@@ -35,9 +35,28 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
     : sortCharacters(characters, sortOption);
 
   return (
-    <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Search Bar & Layout Controls */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* Search Bar & Layout Controls (Fixed Top Controls) */}
+      <div
+        style={{
+          padding: '14px 16px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          background: 'var(--bg-main)',
+          borderBottom: '1px solid var(--border-color)',
+          flexShrink: 0,
+        }}
+      >
         {/* Search input + Layout switcher */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <div
@@ -87,6 +106,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                 borderRadius: 7,
                 backgroundColor: displayLayout === 'grid' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
                 color: displayLayout === 'grid' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                cursor: 'pointer',
               }}
             >
               <LayoutGrid size={16} />
@@ -99,6 +119,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                 borderRadius: 7,
                 backgroundColor: displayLayout === 'list' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
                 color: displayLayout === 'list' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                cursor: 'pointer',
               }}
             >
               <List size={16} />
@@ -107,7 +128,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
         </div>
 
         {/* Sort option pills */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12, flexShrink: 0 }}>
             <ArrowUpDown size={14} />
             <span>Sort:</span>
@@ -127,6 +148,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                 color: sortOption === opt ? '#000' : 'var(--text-secondary)',
                 border: sortOption === opt ? 'none' : '1px solid var(--border-color)',
                 transition: 'all 0.15s ease',
+                cursor: 'pointer',
               }}
             >
               {SORT_LABELS[opt]}
@@ -135,71 +157,80 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
         </div>
       </div>
 
-      {/* Result Count */}
-      <div style={{ fontSize: 12, color: 'var(--text-muted)', paddingLeft: 4 }}>
+      {/* Result Count bar */}
+      <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: '8px 16px 4px', flexShrink: 0 }}>
         Showing {sortedAndFiltered.length} of {characters.length} characters
       </div>
 
-      {/* Character Display: Grid vs List */}
-      {displayLayout === 'grid' ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))',
-            gap: 10,
-          }}
-        >
-          {sortedAndFiltered.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => setSelectedCharacter(item)}
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 14,
-                padding: '12px 8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'transform 0.15s ease, border-color 0.15s ease',
-              }}
-              className="grid-card-item"
-            >
-              <div style={{ position: 'absolute', top: 6, right: 6 }}>
-                <MasteryBadge level={item.progress.mastery} showLabel={false} />
-              </div>
+      {/* Scrollable Cards Area (Internal Custom Cyan Scrollbar) */}
+      <div
+        className="custom-scrollbar"
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '8px 16px 24px',
+        }}
+      >
+        {displayLayout === 'grid' ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))',
+              gap: 10,
+            }}
+          >
+            {sortedAndFiltered.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => setSelectedCharacter(item)}
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 14,
+                  padding: '12px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  transition: 'transform 0.15s ease, border-color 0.15s ease',
+                }}
+                className="grid-card-item"
+              >
+                <div style={{ position: 'absolute', top: 6, right: 6 }}>
+                  <MasteryBadge level={item.progress.mastery} showLabel={false} />
+                </div>
 
-              <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>
-                {item.id}
-              </div>
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>
+                  {item.id}
+                </div>
 
-              <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
-                {item.pinyin[0]}
-              </div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                  {item.pinyin[0]}
+                </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                <HskBadge level={item.hskLevel || '1'} />
-                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>#{item.frequency}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                  <HskBadge level={item.hskLevel || '1'} />
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>#{item.frequency}</span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {sortedAndFiltered.map((item) => (
-            <CharacterCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sortedAndFiltered.map((item) => (
+              <CharacterCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
 
-      {sortedAndFiltered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-          No characters match "{searchQuery}"
-        </div>
-      )}
+        {sortedAndFiltered.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+            No characters match "{searchQuery}"
+          </div>
+        )}
+      </div>
     </div>
   );
 };
