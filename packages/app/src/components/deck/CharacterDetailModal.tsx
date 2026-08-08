@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDeckStore } from '../../stores/deckStore';
 import { MasteryBadge } from '../shared/MasteryBadge';
+import { HskBadge } from '../shared/HskBadge';
 import { CopyButton } from '../shared/CopyButton';
 import { X, Play, Hash, GitFork } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -104,7 +105,9 @@ export const CharacterDetailModal: React.FC = () => {
         </div>
 
         {/* Meta info tags */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+          <HskBadge level={selectedCharacter.hskLevel || '1'} />
+
           <div
             style={{
               display: 'flex',
@@ -118,7 +121,7 @@ export const CharacterDetailModal: React.FC = () => {
             }}
           >
             <Hash size={13} />
-            <span>Freq Rank #{selectedCharacter.frequency}</span>
+            <span>Rank #{selectedCharacter.frequency}</span>
           </div>
 
           {selectedCharacter.radical && (

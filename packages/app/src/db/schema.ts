@@ -15,6 +15,7 @@ export interface CharacterEntity {
   pinyin: string[];        // ["nǐ"]
   definitions: string[];   // ["you"]
   frequency: number;       // Rank 1-1000
+  hskLevel: string;        // "1", "2", "3", "4", "5", "6", "7-9"
   components: string[];    // Radicals / components
   radical: string;
 }
@@ -47,9 +48,9 @@ export class HanZiDatabase extends Dexie {
 
   constructor() {
     super('HanZiXingZuoDB');
-    this.version(3).stores({
+    this.version(4).stores({
       decks: 'id, name, isBuiltIn',
-      characters: 'id, deckId, frequency, radical',
+      characters: 'id, deckId, frequency, hskLevel, radical',
       sentences: 'id, characterId, deckId',
       userProgress: 'characterId, deckId, mastery, lastReviewedAt',
     });

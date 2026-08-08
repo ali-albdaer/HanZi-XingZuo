@@ -20,16 +20,29 @@ describe('Seed Data Integrity', () => {
     for (const c of seedData.characters) {
       expect(c.pinyin.length).toBeGreaterThan(0);
       expect(c.definitions.length).toBeGreaterThan(0);
+      expect(c.hskLevel).toBeDefined();
+      expect(typeof c.hskLevel).toBe('string');
       expect(charSentences.get(c.id)).toBe(3);
     }
   });
 
-  it('ensures all sentences have pre-segmented chunks and pinyin', () => {
+  it('ensures all sentences have pre-segmented chunks, pinyin, and top-1000 character composition', () => {
+    const top1000Set = new Set(seedData.characters.map((c) => c.id));
+    let perfectCount = 0;
+
     for (const s of seedData.sentences) {
       expect(s.chunks.length).toBeGreaterThan(0);
       expect(s.chunks.join('')).toBe(s.chinese);
       expect(s.pinyin).toBeDefined();
       expect(s.pinyin.length).toBeGreaterThan(0);
+
+      const cChars = [...s.chinese].filter((c) => c >= '\u4e00' && c <= '\u9fff');
+      if (cChars.every((c) => top1000Set.has(c))) {
+        perfectCount++;
+      }
     }
+
+    // Assert that >= 99% of sentences consist 100% of characters in the top-1000 deck
+    expect(perfectCount / seedData.sentences.length).toBeGreaterThanOrEqual(0.99);
   });
 });

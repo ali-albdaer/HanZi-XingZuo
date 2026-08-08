@@ -101,6 +101,7 @@ export async function addCharacterToVault(
       pinyin: [pinyin],
       definitions,
       frequency: 9999,
+      hskLevel: '1',
       components: [],
       radical: '',
     };

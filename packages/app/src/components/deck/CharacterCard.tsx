@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CharacterWithProgress } from '../../db/queries';
 import { MasteryBadge } from '../shared/MasteryBadge';
+import { HskBadge } from '../shared/HskBadge';
 import { useDeckStore } from '../../stores/deckStore';
 
 interface CharacterCardProps {
@@ -48,10 +49,11 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
 
         {/* Info */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent-cyan)' }}>
               {item.pinyin.join(', ')}
             </span>
+            <HskBadge level={item.hskLevel || '1'} />
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               #{item.frequency}
             </span>

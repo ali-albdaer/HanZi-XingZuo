@@ -6,6 +6,7 @@ import { useDeckStore } from '../../stores/deckStore';
 import type { SortOption } from '../../config/app.config';
 import { Search, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
 import { MasteryBadge } from '../shared/MasteryBadge';
+import { HskBadge } from '../shared/HskBadge';
 
 interface DeckListViewProps {
   characters: CharacterWithProgress[];
@@ -186,8 +187,9 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                 {item.pinyin[0]}
               </div>
 
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                #{item.frequency}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                <HskBadge level={item.hskLevel || '1'} />
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>#{item.frequency}</span>
               </div>
             </div>
           ))}

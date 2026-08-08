@@ -9,10 +9,13 @@ import re
 import requests
 import jieba
 from pypinyin import pinyin, Style
+from opencc import OpenCC
 
 from pinyin_utils import convert_pinyin_str
 
 sys.stdout.reconfigure(encoding='utf-8')
+
+cc_t2s = OpenCC('t2s')
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'app', 'public')
@@ -35,6 +38,35 @@ def download_file(url: str, filename: str) -> str:
             f.write(chunk)
     print(f"[DONE] Saved {filename}")
     return filepath
+
+def get_hsk_mapping():
+    url = "https://raw.githubusercontent.com/drkameleon/complete-hsk-vocabulary/main/complete.json"
+    json_path = download_file(url, "hsk_complete.json")
+    
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    char_hsk = {}
+    for entry in data:
+        simp = entry.get('simplified', '')
+        levels = entry.get('level', [])
+        lvl_nums = []
+        for l in levels:
+            nums = [int(n) for n in re.findall(r'\d+', l)]
+            lvl_nums.extend(nums)
+        if lvl_nums:
+            min_lvl = min(lvl_nums)
+            if len(simp) == 1:
+                if simp not in char_hsk or min_lvl < char_hsk[simp]:
+                    char_hsk[simp] = min_lvl
+            else:
+                for c in simp:
+                    if '\u4e00' <= c <= '\u9fff':
+                        if c not in char_hsk or min_lvl < char_hsk[c]:
+                            char_hsk[c] = min_lvl
+                            
+    print(f"[HSK] Loaded HSK level mappings for {len(char_hsk)} characters.")
+    return char_hsk
 
 def get_subtlex_top1000():
     url = "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0010729.s002&type=supplementary"
@@ -166,7 +198,7 @@ def get_tatoeba_sentences(top1000_set):
     eng_path = download_file(url_eng, "eng_sentences.tsv.bz2")
     links_path = download_file(url_links, "cmn-eng_links.tsv.bz2")
     
-    print("[TATOEBA] Reading Chinese sentences...")
+    print("[TATOEBA] Reading Chinese sentences & converting T2S...")
     cmn_map = {}
     with bz2.open(cmn_path, 'rt', encoding='utf-8') as f:
         for line in f:
@@ -174,7 +206,9 @@ def get_tatoeba_sentences(top1000_set):
             if len(parts) >= 3:
                 sid, lang, text = parts[0], parts[1], parts[2]
                 if len(text) <= 12: # Only short sentences for mobile practice
-                    cmn_map[sid] = text
+                    # Convert Traditional Chinese to Simplified Chinese
+                    simp_text = cc_t2s.convert(text)
+                    cmn_map[sid] = simp_text
                     
     print("[TATOEBA] Reading Links...")
     cmn_to_eng = {}
@@ -247,37 +281,49 @@ def main():
     top1000_chars = get_subtlex_top1000()
     top1000_set = set(top1000_chars)
     
+    hsk_map = get_hsk_mapping()
     cedict_map = get_cedict_dictionary()
     hanzi_meta = get_makemeahanzi_data()
     tatoeba_pairs = get_tatoeba_sentences(top1000_set)
     
-    # Map sentences to characters
     char_to_sentences = {c: [] for c in top1000_chars}
     
-    print("[PIPELINE] Assigning Tatoeba sentences to characters...")
+    print("[PIPELINE] Assigning Tatoeba sentences (Pass 1: 100% Top-1000 chars)...")
     for c_text, e_text in tatoeba_pairs:
-        # Check if sentence characters are within top 1000 or reasonable
         chars_in_sent = [c for c in c_text if '\u4e00' <= c <= '\u9fff']
         if not chars_in_sent:
             continue
-        
-        # Calculate coverage ratio against top 1000
+        if all(c in top1000_set for c in chars_in_sent):
+            chunks = jieba.lcut(c_text)
+            py_text = format_sentence_pinyin(c_text)
+            for c in chars_in_sent:
+                if c in char_to_sentences and len(char_to_sentences[c]) < 3:
+                    if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
+                        char_to_sentences[c].append({
+                            "chinese": c_text,
+                            "pinyin": py_text,
+                            "english": e_text,
+                            "chunks": chunks
+                        })
+
+    print("[PIPELINE] Assigning Tatoeba sentences (Pass 2: >= 85% Top-1000 chars)...")
+    for c_text, e_text in tatoeba_pairs:
+        chars_in_sent = [c for c in c_text if '\u4e00' <= c <= '\u9fff']
+        if not chars_in_sent:
+            continue
         in_top_cnt = sum(1 for c in chars_in_sent if c in top1000_set)
-        if in_top_cnt / len(chars_in_sent) < 0.7:
-            continue # Skip sentences with too many unknown characters
-            
-        chunks = jieba.lcut(c_text)
-        
-        for c in chars_in_sent:
-            if c in char_to_sentences and len(char_to_sentences[c]) < 3:
-                # Avoid duplicate sentences
-                if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
-                    char_to_sentences[c].append({
-                        "chinese": c_text,
-                        "pinyin": format_sentence_pinyin(c_text),
-                        "english": e_text,
-                        "chunks": chunks
-                    })
+        if in_top_cnt / len(chars_in_sent) >= 0.85:
+            chunks = jieba.lcut(c_text)
+            py_text = format_sentence_pinyin(c_text)
+            for c in chars_in_sent:
+                if c in char_to_sentences and len(char_to_sentences[c]) < 3:
+                    if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
+                        char_to_sentences[c].append({
+                            "chinese": c_text,
+                            "pinyin": py_text,
+                            "english": e_text,
+                            "chunks": chunks
+                        })
                     
     # Generate seed JSON objects
     characters_out = []
@@ -313,6 +359,9 @@ def main():
         if not defs:
             defs = [char]
             
+        # HSK Level
+        hsk_lvl = str(hsk_map.get(char, "7-9"))
+
         # Characters in deck
         characters_out.append({
             "id": char,
@@ -320,6 +369,7 @@ def main():
             "pinyin": pinyins,
             "definitions": defs,
             "frequency": idx + 1, # 1-1000
+            "hskLevel": hsk_lvl,
             "components": m.get('components', []),
             "radical": m.get('radical', '')
         })
