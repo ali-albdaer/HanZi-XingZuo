@@ -206,8 +206,9 @@ export const PracticeView: React.FC = () => {
         flexDirection: 'column',
         height: '100%',
         backgroundColor: 'var(--bg-main)',
-        padding: '16px 20px',
+        padding: '12px 18px calc(var(--tab-bar-height) + 12px)',
         boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
       {/* Header Bar */}

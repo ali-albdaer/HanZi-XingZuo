@@ -4,9 +4,8 @@ import { sortCharacters } from '../../db/queries';
 import { searchAndRankCharacters } from '../../core/search';
 import { CharacterCard } from './CharacterCard';
 import { useDeckStore } from '../../stores/deckStore';
-import type { SortOption } from '../../config/app.config';
+import type { SortOption, MasteryLevel } from '../../config/app.config';
 import { Search, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
-import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
 
 interface DeckListViewProps {
@@ -19,6 +18,36 @@ const SORT_LABELS: Record<SortOption, string> = {
   mastery: 'Mastery Level',
   radical: 'Shared Radical',
 };
+
+function getMasteryCellStyle(level: MasteryLevel) {
+  switch (level) {
+    case 'gold':
+      return {
+        background: 'rgba(255, 215, 0, 0.12)',
+        border: '1px solid rgba(255, 215, 0, 0.45)',
+        boxShadow: '0 0 12px rgba(255, 215, 0, 0.15)',
+      };
+    case 'silver':
+      return {
+        background: 'rgba(160, 176, 192, 0.12)',
+        border: '1px solid rgba(160, 176, 192, 0.4)',
+        boxShadow: 'none',
+      };
+    case 'bronze':
+      return {
+        background: 'rgba(205, 127, 50, 0.12)',
+        border: '1px solid rgba(205, 127, 50, 0.4)',
+        boxShadow: 'none',
+      };
+    case 'grey':
+    default:
+      return {
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-color)',
+        boxShadow: 'none',
+      };
+  }
+}
 
 export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const sortOption = useDeckStore((s) => s.sortOption);
@@ -162,7 +191,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
         Showing {sortedAndFiltered.length} of {characters.length} characters
       </div>
 
-      {/* Scrollable Cards Area (Internal Custom Cyan Scrollbar) */}
+      {/* Scrollable Cards Area */}
       <div
         className="custom-scrollbar"
         style={{
@@ -179,43 +208,56 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               gap: 10,
             }}
           >
-            {sortedAndFiltered.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedCharacter(item)}
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 14,
-                  padding: '12px 8px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'transform 0.15s ease, border-color 0.15s ease',
-                }}
-                className="grid-card-item"
-              >
-                <div style={{ position: 'absolute', top: 6, right: 6 }}>
-                  <MasteryBadge level={item.progress.mastery} showLabel={false} />
-                </div>
+            {sortedAndFiltered.map((item) => {
+              const masteryStyle = getMasteryCellStyle(item.progress.mastery);
 
-                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>
-                  {item.id}
-                </div>
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => setSelectedCharacter(item)}
+                  style={{
+                    ...masteryStyle,
+                    borderRadius: 14,
+                    padding: '10px 6px 8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    height: 96,
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    transition: 'transform 0.15s ease, border-color 0.15s ease, background 0.15s ease',
+                  }}
+                  className="grid-card-item"
+                >
+                  <div style={{ textAlign: 'center', marginTop: 2 }}>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+                      {item.id}
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                      {item.pinyin[0]}
+                    </div>
+                  </div>
 
-                <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
-                  {item.pinyin[0]}
+                  {/* Clean Footer Row: Same font size (#Rank & HSK badge), Zero overflow */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 5,
+                      width: '100%',
+                    }}
+                  >
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      #{item.frequency}
+                    </span>
+                    <HskBadge level={item.hskLevel || '1'} />
+                  </div>
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                  <HskBadge level={item.hskLevel || '1'} />
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>#{item.frequency}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -265,8 +265,19 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
       });
     }
 
-    // 3D Fibonacci Sphere Nodes for Interactive Globe Mode (Show All)
-    const globNodes: { id: string; pinyin: string; mastery: MasteryLevel; rx: number; ry: number; rz: number }[] = [];
+    const globNodes: {
+      id: string;
+      pinyin: string;
+      mastery: MasteryLevel;
+      rx: number;
+      ry: number;
+      rz: number;
+      px: number;
+      py: number;
+      pRadius: number;
+      alpha: number;
+      z2: number;
+    }[] = [];
 
     if (initialMode === 'showAll') {
       const visibleChars = characters.filter((c) => activeFilters[c.progress.mastery]);
@@ -289,6 +300,11 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           rx: x * radius,
           ry: y * radius,
           rz: z * radius,
+          px: 0,
+          py: 0,
+          pRadius: 0,
+          alpha: 0,
+          z2: 0,
         });
       });
     }
@@ -421,9 +437,8 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           ctx.restore();
         });
       } else {
-        // Interactive 3D Globe Mode (Show All)
+        // Interactive 3D Globe Mode (Show All) - High Performance 60FPS
         if (!isDraggingRef.current) {
-          // Slow idle auto-spin when user is not dragging
           globeRotRef.current.y += 0.0012;
         }
 
@@ -435,49 +450,46 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         const cosY = Math.cos(rotY);
         const sinY = Math.sin(rotY);
 
-        const projected = globNodes.map((n) => {
-          // Rotate Y axis
+        const total = globNodes.length;
+
+        // Reuse persistent objects to avoid 60FPS garbage collection lag
+        for (let i = 0; i < total; i++) {
+          const n = globNodes[i];
           const x1 = n.rx * cosY - n.rz * sinY;
           const z1 = n.rx * sinY + n.rz * cosY;
           const y1 = n.ry;
-
-          // Rotate X axis
           const y2 = y1 * cosX - z1 * sinX;
           const z2 = y1 * sinX + z1 * cosX;
-          const x2 = x1;
 
-          const perspective = 550;
-          const k = perspective / (perspective + z2);
-          const px = centerX + x2 * k;
-          const py = centerY + y2 * k;
-          const pRadius = Math.max(7, 15 * k);
-          const alpha = Math.min(1, Math.max(0.15, (z2 + 300) / 600));
-
-          return { ...n, px, py, pRadius, alpha, z2 };
-        });
-
-        projected.sort((a, b) => a.z2 - b.z2);
-
-        // Draw 3D Globe Web Edges
-        for (let i = 0; i < projected.length; i += 4) {
-          for (let j = i + 1; j < Math.min(i + 5, projected.length); j++) {
-            const p1 = projected[i];
-            const p2 = projected[j];
-            const dist = Math.hypot(p1.px - p2.px, p1.py - p2.py);
-
-            if (dist < 110) {
-              ctx.beginPath();
-              ctx.moveTo(p1.px, p1.py);
-              ctx.lineTo(p2.px, p2.py);
-              ctx.strokeStyle = `rgba(0, 229, 255, ${0.1 * Math.min(p1.alpha, p2.alpha)})`;
-              ctx.lineWidth = 1;
-              ctx.stroke();
-            }
-          }
+          const k = 550 / (550 + z2);
+          n.px = centerX + x1 * k;
+          n.py = centerY + y2 * k;
+          n.pRadius = Math.max(6, 14 * k);
+          n.alpha = Math.min(1, Math.max(0.15, (z2 + 300) / 600));
+          n.z2 = z2;
         }
 
+        // Quick depth sort using simple bucket / insertion for 1000 items
+        globNodes.sort((a, b) => a.z2 - b.z2);
+
+        // Batch Draw 3D Globe Web Edges
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < total; i += 6) {
+          const p1 = globNodes[i];
+          if (p1.z2 < -100) continue;
+          for (let j = i + 1; j < Math.min(i + 4, total); j++) {
+            const p2 = globNodes[j];
+            ctx.moveTo(p1.px, p1.py);
+            ctx.lineTo(p2.px, p2.py);
+          }
+        }
+        ctx.stroke();
+
         // Draw 3D Globe Nodes
-        projected.forEach((node) => {
+        for (let i = 0; i < total; i++) {
+          const node = globNodes[i];
           const color = MASTERY_COLORS[node.mastery];
 
           ctx.save();
@@ -489,17 +501,20 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           ctx.fill();
 
           ctx.strokeStyle = color;
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 1.2;
           ctx.stroke();
 
-          ctx.fillStyle = '#FFFFFF';
-          ctx.font = `${Math.round(11 * (node.pRadius / 15))}px Inter, sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(node.id, node.px, node.py - 1);
+          // Render Chinese character if node is in front
+          if (node.z2 > -180) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `${Math.round(11 * (node.pRadius / 14))}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.id, node.px, node.py);
+          }
 
           ctx.restore();
-        });
+        }
       }
 
       ctx.restore();

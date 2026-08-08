@@ -27,33 +27,33 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
       }}
       className="character-card-item"
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* Character Node Icon */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+        {/* Character Box */}
         <div
           style={{
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             borderRadius: 12,
             background: 'rgba(255, 255, 255, 0.04)',
             border: '1px solid var(--border-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 26,
-            fontWeight: 600,
+            fontSize: 24,
+            fontWeight: 700,
             color: 'var(--text-primary)',
+            flexShrink: 0,
           }}
         >
           {item.id}
         </div>
 
         {/* Info */}
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent-cyan)' }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--accent-cyan)' }}>
               {item.pinyin.join(', ')}
             </span>
-            <HskBadge level={item.hskLevel || '1'} />
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               #{item.frequency}
             </span>
@@ -64,11 +64,9 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
               fontSize: 13,
               color: 'var(--text-secondary)',
               marginTop: 2,
-              maxLines: 1,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              maxWidth: 180,
             }}
           >
             {item.definitions.join('; ')}
@@ -76,8 +74,11 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
         </div>
       </div>
 
-      {/* Mastery level badge */}
-      <MasteryBadge level={item.progress.mastery} showLabel={false} />
+      {/* Badges on Right */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <HskBadge level={item.hskLevel || '1'} />
+        <MasteryBadge level={item.progress.mastery} showLabel={false} />
+      </div>
     </div>
   );
 };

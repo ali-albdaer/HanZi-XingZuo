@@ -157,7 +157,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
           </div>
         </div>
 
-        {/* Cloze Sentence Box */}
+        {/* English Prompt & Cloze Sentence Box */}
         <div
           style={{
             background: 'rgba(255, 255, 255, 0.03)',
@@ -168,11 +168,11 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
             marginBottom: 8,
           }}
         >
-          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>
-            {clozeSentence}
-          </div>
-          <div style={{ fontSize: 13.5, color: 'var(--text-muted)', marginTop: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
             {sentence.english}
+          </div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent-cyan)', lineHeight: 1.4 }}>
+            {clozeSentence}
           </div>
         </div>
       </div>
