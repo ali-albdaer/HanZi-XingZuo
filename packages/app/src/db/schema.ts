@@ -24,6 +24,7 @@ export interface SentenceEntity {
   characterId: string;     // FK -> CharacterEntity.id
   deckId: string;          // FK -> DeckEntity.id
   chinese: string;
+  pinyin: string;
   english: string;
   chunks: string[];        // Pre-segmented chunks
 }
@@ -46,7 +47,7 @@ export class HanZiDatabase extends Dexie {
 
   constructor() {
     super('HanZiXingZuoDB');
-    this.version(1).stores({
+    this.version(2).stores({
       decks: 'id, name, isBuiltIn',
       characters: 'id, deckId, frequency, radical',
       sentences: 'id, characterId, deckId',

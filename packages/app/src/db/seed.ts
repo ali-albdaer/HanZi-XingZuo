@@ -2,12 +2,18 @@ import { db, type DeckEntity, type CharacterEntity, type SentenceEntity, type Us
 
 export async function ensureDatabaseSeeded(): Promise<void> {
   const existingDecks = await db.decks.count();
-  if (existingDecks > 0) {
+  const sampleSentence = await db.sentences.toCollection().first();
+  if (existingDecks > 0 && sampleSentence && sampleSentence.pinyin) {
     return;
   }
 
-  console.log('[SEED] Initializing database from seed-data.json...');
+  console.log('[SEED] Initializing/Updating database from seed-data.json...');
   try {
+    await db.transaction('rw', [db.decks, db.characters, db.sentences, db.userProgress], async () => {
+      await db.decks.clear();
+      await db.characters.clear();
+      await db.sentences.clear();
+    });
     const response = await fetch('/seed-data.json');
     if (!response.ok) {
       throw new Error(`Failed to fetch seed data: ${response.statusText}`);

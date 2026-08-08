@@ -61,8 +61,8 @@ const MASTERY_RANK: Record<MasteryLevel, number> = {
   gold: 3,
 };
 
-function sortCharacters(list: CharacterWithProgress[], sort: SortOption): CharacterWithProgress[] {
-  return list.sort((a, b) => {
+export function sortCharacters(list: CharacterWithProgress[], sort: SortOption): CharacterWithProgress[] {
+  return list.slice().sort((a, b) => {
     if (sort === 'frequency') {
       return a.frequency - b.frequency;
     }
@@ -91,7 +91,7 @@ export async function addCharacterToVault(
   char: string,
   pinyin: string,
   definitions: string[],
-  sentenceContext?: { chinese: string; english: string; chunks: string[] }
+  sentenceContext?: { chinese: string; pinyin?: string; english: string; chunks: string[] }
 ): Promise<void> {
   const existing = await db.characters.get(char);
   if (!existing) {
@@ -125,6 +125,7 @@ export async function addCharacterToVault(
         characterId: char,
         deckId: 'my-vault',
         chinese: sentenceContext.chinese,
+        pinyin: sentenceContext.pinyin || '',
         english: sentenceContext.english,
         chunks: sentenceContext.chunks,
       });

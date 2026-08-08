@@ -30,25 +30,26 @@ export const CharacterDetailModal: React.FC = () => {
         backdropFilter: 'blur(8px)',
         zIndex: 200,
         display: 'flex',
-        alignItems: 'flex-end',
+        alignItems: 'center',
         justifyContent: 'center',
+        padding: 16,
       }}
       onClick={() => setSelectedCharacter(null)}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: 500,
-          maxHeight: '90vh',
+          maxWidth: 480,
+          maxHeight: '85vh',
           backgroundColor: 'var(--bg-secondary)',
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
+          borderRadius: 24,
           border: '1px solid var(--border-color)',
           padding: 24,
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 20,
+          gap: 18,
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -159,6 +160,11 @@ export const CharacterDetailModal: React.FC = () => {
                 <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-primary)' }}>
                   {sentence.chinese}
                 </div>
+                {sentence.pinyin && (
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                    {sentence.pinyin}
+                  </div>
+                )}
                 <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
                   {sentence.english}
                 </div>

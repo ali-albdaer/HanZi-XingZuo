@@ -7,6 +7,7 @@ import io
 import zipfile
 import requests
 import jieba
+from pypinyin import pinyin, Style
 
 from pinyin_utils import convert_pinyin_str
 
@@ -180,6 +181,21 @@ def get_tatoeba_sentences(top1000_set):
     print(f"[TATOEBA] Filtered {len(pairs)} short Chinese-English sentence pairs.")
     return pairs
 
+def format_sentence_pinyin(chinese_text: str) -> str:
+    py_list = pinyin(chinese_text, style=Style.TONE)
+    res = []
+    for i, item in enumerate(py_list):
+        s = item[0]
+        if i > 0 and s and s[0].isalnum():
+            prev = py_list[i-1][0]
+            if prev and prev[0].isalnum():
+                res.append(' ' + s)
+            else:
+                res.append(s)
+        else:
+            res.append(s)
+    return ''.join(res)
+
 def generate_fallback_sentences(char, pinyin_str, def_str):
     # Standard natural template sentences for characters missing enough Tatoeba sentences
     patterns = [
@@ -192,6 +208,7 @@ def generate_fallback_sentences(char, pinyin_str, def_str):
         chunks = jieba.lcut(c_text)
         results.append({
             "chinese": c_text,
+            "pinyin": format_sentence_pinyin(c_text),
             "english": e_text,
             "chunks": chunks
         })
@@ -230,6 +247,7 @@ def main():
                 if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
                     char_to_sentences[c].append({
                         "chinese": c_text,
+                        "pinyin": format_sentence_pinyin(c_text),
                         "english": e_text,
                         "chunks": chunks
                     })
@@ -276,6 +294,7 @@ def main():
                 "characterId": char,
                 "deckId": "top-1000",
                 "chinese": s["chinese"],
+                "pinyin": s.get("pinyin", format_sentence_pinyin(s["chinese"])),
                 "english": s["english"],
                 "chunks": s["chunks"]
             })

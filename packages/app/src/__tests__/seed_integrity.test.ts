@@ -24,10 +24,12 @@ describe('Seed Data Integrity', () => {
     }
   });
 
-  it('ensures all sentences have pre-segmented chunks', () => {
+  it('ensures all sentences have pre-segmented chunks and pinyin', () => {
     for (const s of seedData.sentences) {
       expect(s.chunks.length).toBeGreaterThan(0);
       expect(s.chunks.join('')).toBe(s.chinese);
+      expect(s.pinyin).toBeDefined();
+      expect(s.pinyin.length).toBeGreaterThan(0);
     }
   });
 });

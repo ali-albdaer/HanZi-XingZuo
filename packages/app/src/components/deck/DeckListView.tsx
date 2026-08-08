@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { CharacterWithProgress } from '../../db/queries';
+import { sortCharacters } from '../../db/queries';
 import { CharacterCard } from './CharacterCard';
 import { useDeckStore } from '../../stores/deckStore';
 import type { SortOption } from '../../config/app.config';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
+import { MasteryBadge } from '../shared/MasteryBadge';
 
 interface DeckListViewProps {
   characters: CharacterWithProgress[];
@@ -21,7 +23,11 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const setSortOption = useDeckStore((s) => s.setSortOption);
   const searchQuery = useDeckStore((s) => s.searchQuery);
   const setSearchQuery = useDeckStore((s) => s.setSearchQuery);
+  const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
 
+  const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
+
+  // Filter first, then sort live
   const filtered = characters.filter((c) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
@@ -32,37 +38,78 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
     );
   });
 
+  const sortedAndFiltered = sortCharacters(filtered, sortOption);
+
   return (
     <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Search Bar & Sort selector */}
+      {/* Search Bar & Layout Controls */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Search input */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            backgroundColor: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 12,
-            padding: '10px 14px',
-          }}
-        >
-          <Search size={18} style={{ color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            placeholder="Search character, pinyin, meaning..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        {/* Search input + Layout switcher */}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div
             style={{
               flex: 1,
-              background: 'none',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--text-primary)',
-              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 12,
+              padding: '10px 14px',
             }}
-          />
+          >
+            <Search size={18} style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Search character, pinyin, meaning..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                flex: 1,
+                background: 'none',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--text-primary)',
+                fontSize: 14,
+              }}
+            />
+          </div>
+
+          {/* Grid / List layout toggle */}
+          <div
+            style={{
+              display: 'flex',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderRadius: 10,
+              padding: 3,
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <button
+              onClick={() => setDisplayLayout('grid')}
+              title="Grid View"
+              style={{
+                padding: '8px 10px',
+                borderRadius: 7,
+                backgroundColor: displayLayout === 'grid' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                color: displayLayout === 'grid' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              }}
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              onClick={() => setDisplayLayout('list')}
+              title="Detailed List View"
+              style={{
+                padding: '8px 10px',
+                borderRadius: 7,
+                backgroundColor: displayLayout === 'list' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                color: displayLayout === 'list' ? 'var(--accent-cyan)' : 'var(--text-muted)',
+              }}
+            >
+              <List size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Sort option pills */}
@@ -96,21 +143,68 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
 
       {/* Result Count */}
       <div style={{ fontSize: 12, color: 'var(--text-muted)', paddingLeft: 4 }}>
-        Showing {filtered.length} of {characters.length} characters
+        Showing {sortedAndFiltered.length} of {characters.length} characters
       </div>
 
-      {/* Character List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {filtered.map((item) => (
-          <CharacterCard key={item.id} item={item} />
-        ))}
+      {/* Character Display: Grid vs List */}
+      {displayLayout === 'grid' ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))',
+            gap: 10,
+          }}
+        >
+          {sortedAndFiltered.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => setSelectedCharacter(item)}
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 14,
+                padding: '12px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'transform 0.15s ease, border-color 0.15s ease',
+              }}
+              className="grid-card-item"
+            >
+              <div style={{ position: 'absolute', top: 6, right: 6 }}>
+                <MasteryBadge level={item.progress.mastery} showLabel={false} />
+              </div>
 
-        {filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-            No characters match "{searchQuery}"
-          </div>
-        )}
-      </div>
+              <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>
+                {item.id}
+              </div>
+
+              <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                {item.pinyin[0]}
+              </div>
+
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                #{item.frequency}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {sortedAndFiltered.map((item) => (
+            <CharacterCard key={item.id} item={item} />
+          ))}
+        </div>
+      )}
+
+      {sortedAndFiltered.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+          No characters match "{searchQuery}"
+        </div>
+      )}
     </div>
   );
 };
