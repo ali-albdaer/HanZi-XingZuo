@@ -3,7 +3,6 @@ import type { CharacterWithProgress } from '../../db/queries';
 import type { MasteryLevel } from '../../config/app.config';
 import { MASTERY_COLORS } from '../../config/app.config';
 import { useDeckStore } from '../../stores/deckStore';
-import * as d3 from 'd3';
 import { Info, Compass } from 'lucide-react';
 
 interface ConstellationCanvasProps {
@@ -11,25 +10,39 @@ interface ConstellationCanvasProps {
   initialMode?: 'orbit' | 'showAll';
 }
 
-interface NodeData extends d3.SimulationNodeDatum {
+interface ConstellationNode {
   id: string;
   pinyin: string;
   mastery: MasteryLevel;
   frequency: number;
   components: string[];
   radical: string;
-  level: number; // 0 = center, 1 = direct, 2 = foggy outer
-  x?: number;
-  y?: number;
+  level: number; // 0 = center, 1 = primary, 2 = secondary
+  // Base coordinates
+  baseX: number;
+  baseY: number;
+  // Current dynamic coordinates (base + low-frequency oscillation)
+  x: number;
+  y: number;
+  // Animation interpolation start/end
+  startX?: number;
+  startY?: number;
   targetX?: number;
   targetY?: number;
+  // Oscillation parameters
+  oscPhaseX: number;
+  oscPhaseY: number;
+  oscSpeed: number;
 }
 
-interface LinkData {
+interface ConstellationLink {
   source: string;
   target: string;
-  level: number; // 1 = center to level 1, 2 = level 1 to level 2 or inter-neighbor
+  level: number; // 1 = center to primary, 2 = inter-primary or secondary
 }
+
+// Low-frequency oscillation constants (Tunable)
+const MAX_OSCILLATION_PX = 6.0;
 
 export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
   characters,
@@ -54,21 +67,23 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     panY: 0,
   });
 
-  // Smooth slide animation state
-  const slideAnimationRef = useRef<{
+  // Smooth Node Swap Animation State
+  const swapAnimRef = useRef<{
     animating: boolean;
-    startPanX: number;
-    startPanY: number;
-    targetPanX: number;
-    targetPanY: number;
     startTime: number;
+    duration: number;
+    oldCenterId: string;
+    newCenterId: string;
+    nodeStarts: Map<string, { x: number; y: number }>;
+    nodeTargets: Map<string, { x: number; y: number }>;
   }>({
     animating: false,
-    startPanX: 0,
-    startPanY: 0,
-    targetPanX: 0,
-    targetPanY: 0,
     startTime: 0,
+    duration: 450,
+    oldCenterId: '',
+    newCenterId: '',
+    nodeStarts: new Map(),
+    nodeTargets: new Map(),
   });
 
   // Mastery filters state
@@ -83,98 +98,72 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     return characters.find((c) => c.id === focusedCharId) || characters[0];
   }, [characters, focusedCharId]);
 
-  // Build 2-level Multi-hop Graph Structure for Orbit Mode
-  const orbitGraph = useMemo(() => {
+  // Build Topology Graph for Focused Character
+  const graphData = useMemo(() => {
     if (!focusedChar) return { nodes: [], links: [] };
 
     const centerComps = new Set([...focusedChar.components, focusedChar.radical].filter(Boolean));
 
-    // Level 1: Direct component/radical neighbors
-    const level1 = characters.filter((c) => {
+    // Primary Nodes (Level 1): Direct component/radical neighbors
+    const primary = characters.filter((c) => {
       if (c.id === focusedChar.id) return false;
       if (!activeFilters[c.progress.mastery]) return false;
       const cComps = [...c.components, c.radical].filter(Boolean);
       return cComps.some((comp) => centerComps.has(comp));
     }).slice(0, 10);
 
-    // If level 1 is small, add nearby frequency chars
-    if (level1.length < 6) {
+    // Fallback if primary count < 6
+    if (primary.length < 6) {
       const extra = characters.filter(
-        (c) => c.id !== focusedChar.id && activeFilters[c.progress.mastery] && !level1.includes(c)
+        (c) => c.id !== focusedChar.id && activeFilters[c.progress.mastery] && !primary.includes(c)
       );
-      level1.push(...extra.slice(0, 6 - level1.length));
+      primary.push(...extra.slice(0, 6 - primary.length));
     }
 
-    const level1Ids = new Set(level1.map((c) => c.id));
+    const primaryIds = new Set(primary.map((c) => c.id));
+    const secondaryMap = new Map<string, CharacterWithProgress>();
+    const links: ConstellationLink[] = [];
 
-    // Level 2: Foggy outer set (connected to Level 1 nodes)
-    const level2Map = new Map<string, CharacterWithProgress>();
-    const links: LinkData[] = [];
+    // Center -> Primary links
+    primary.forEach((p) => {
+      links.push({ source: focusedChar.id, target: p.id, level: 1 });
 
-    // Center -> Level 1 links
-    level1.forEach((l1) => {
-      links.push({ source: focusedChar.id, target: l1.id, level: 1 });
-
-      // Find Level 2 neighbors for this Level 1 node
-      const l1Comps = new Set([...l1.components, l1.radical].filter(Boolean));
-      const l2Candidates = characters.filter((c) => {
-        if (c.id === focusedChar.id || level1Ids.has(c.id)) return false;
+      // Find Secondary (Level 2) outer neighbors connected to this Primary node
+      const pComps = new Set([...p.components, p.radical].filter(Boolean));
+      const sCandidates = characters.filter((c) => {
+        if (c.id === focusedChar.id || primaryIds.has(c.id)) return false;
         if (!activeFilters[c.progress.mastery]) return false;
         const cComps = [...c.components, c.radical].filter(Boolean);
-        return cComps.some((comp) => l1Comps.has(comp));
+        return cComps.some((comp) => pComps.has(comp));
       }).slice(0, 2);
 
-      l2Candidates.forEach((l2) => {
-        level2Map.set(l2.id, l2);
-        links.push({ source: l1.id, target: l2.id, level: 2 });
+      sCandidates.forEach((s) => {
+        secondaryMap.set(s.id, s);
+        links.push({ source: p.id, target: s.id, level: 2 });
       });
     });
 
-    // Inter-level1 links
-    for (let i = 0; i < level1.length; i++) {
-      for (let j = i + 1; j < level1.length; j++) {
-        const aComps = new Set([...level1[i].components, level1[i].radical].filter(Boolean));
-        const bComps = [...level1[j].components, level1[j].radical].filter(Boolean);
+    // Inter-Primary links
+    for (let i = 0; i < primary.length; i++) {
+      for (let j = i + 1; j < primary.length; j++) {
+        const aComps = new Set([...primary[i].components, primary[i].radical].filter(Boolean));
+        const bComps = [...primary[j].components, primary[j].radical].filter(Boolean);
         if (bComps.some((c) => aComps.has(c))) {
-          links.push({ source: level1[i].id, target: level1[j].id, level: 2 });
+          links.push({ source: primary[i].id, target: primary[j].id, level: 2 });
         }
       }
     }
 
-    const nodes: NodeData[] = [
-      {
-        id: focusedChar.id,
-        pinyin: focusedChar.pinyin[0],
-        mastery: focusedChar.progress.mastery,
-        frequency: focusedChar.frequency,
-        components: focusedChar.components,
-        radical: focusedChar.radical,
-        level: 0,
-      },
-      ...level1.map((c) => ({
-        id: c.id,
-        pinyin: c.pinyin[0],
-        mastery: c.progress.mastery,
-        frequency: c.frequency,
-        components: c.components,
-        radical: c.radical,
-        level: 1,
-      })),
-      ...Array.from(level2Map.values()).map((c) => ({
-        id: c.id,
-        pinyin: c.pinyin[0],
-        mastery: c.progress.mastery,
-        frequency: c.frequency,
-        components: c.components,
-        radical: c.radical,
-        level: 2,
-      })),
+    const rawNodes = [
+      { char: focusedChar, level: 0 },
+      ...primary.map((c) => ({ char: c, level: 1 })),
+      ...Array.from(secondaryMap.values()).map((c) => ({ char: c, level: 2 })),
     ];
 
-    return { nodes, links };
+    return { rawNodes, links };
   }, [characters, focusedChar, activeFilters]);
 
-  // Main Canvas Render Loop with Smooth Camera & D3 Force Positions
+  // Main Render Loop with Dynamic Oscillation, 3D Glob, & Smooth Node Swap Animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -198,66 +187,129 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // Position calculation for nodes
-    const nodePosMap = new Map<string, { x: number; y: number; level: number; data: NodeData }>();
+    // Calculate base layout coordinates for Orbit graph
+    const nodesMap = new Map<string, ConstellationNode>();
 
     if (initialMode === 'orbit') {
-      // Center (Level 0)
-      nodePosMap.set(focusedChar.id, {
+      // Level 0 Center
+      nodesMap.set(focusedChar.id, {
+        id: focusedChar.id,
+        pinyin: focusedChar.pinyin[0],
+        mastery: focusedChar.progress.mastery,
+        frequency: focusedChar.frequency,
+        components: focusedChar.components,
+        radical: focusedChar.radical,
+        level: 0,
+        baseX: centerX,
+        baseY: centerY,
         x: centerX,
         y: centerY,
-        level: 0,
-        data: orbitGraph.nodes[0],
+        oscPhaseX: Math.random() * Math.PI * 2,
+        oscPhaseY: Math.random() * Math.PI * 2,
+        oscSpeed: 0.6 + Math.random() * 0.4,
       });
 
-      // Level 1 nodes in inner circle (R1)
+      // Level 1 Primary Ring
       const r1 = Math.min(width, height) * 0.28;
-      const level1Nodes = orbitGraph.nodes.filter((n) => n.level === 1);
-      const n1 = level1Nodes.length;
+      const primaryNodes = graphData.rawNodes.filter((n) => n.level === 1);
+      const n1 = primaryNodes.length;
 
-      level1Nodes.forEach((node, idx) => {
+      primaryNodes.forEach((item, idx) => {
         const angle = (idx / n1) * 2 * Math.PI - Math.PI / 2;
-        const nx = centerX + r1 * Math.cos(angle);
-        const ny = centerY + r1 * Math.sin(angle);
-        nodePosMap.set(node.id, { x: nx, y: ny, level: 1, data: node });
+        const bx = centerX + r1 * Math.cos(angle);
+        const by = centerY + r1 * Math.sin(angle);
+
+        nodesMap.set(item.char.id, {
+          id: item.char.id,
+          pinyin: item.char.pinyin[0],
+          mastery: item.char.progress.mastery,
+          frequency: item.char.frequency,
+          components: item.char.components,
+          radical: item.char.radical,
+          level: 1,
+          baseX: bx,
+          baseY: by,
+          x: bx,
+          y: by,
+          oscPhaseX: Math.random() * Math.PI * 2,
+          oscPhaseY: Math.random() * Math.PI * 2,
+          oscSpeed: 0.5 + Math.random() * 0.5,
+        });
       });
 
-      // Level 2 (Foggy Outer Set) in outer circle (R2) around their parent Level 1 node
+      // Level 2 Secondary Foggy Outer Ring
       const r2 = Math.min(width, height) * 0.44;
-      const level2Nodes = orbitGraph.nodes.filter((n) => n.level === 2);
-      const n2 = level2Nodes.length;
+      const secondaryNodes = graphData.rawNodes.filter((n) => n.level === 2);
+      const n2 = secondaryNodes.length;
 
-      level2Nodes.forEach((node, idx) => {
+      secondaryNodes.forEach((item, idx) => {
         const angle = (idx / n2) * 2 * Math.PI - Math.PI / 4;
-        const nx = centerX + r2 * Math.cos(angle);
-        const ny = centerY + r2 * Math.sin(angle);
-        nodePosMap.set(node.id, { x: nx, y: ny, level: 2, data: node });
+        const bx = centerX + r2 * Math.cos(angle);
+        const by = centerY + r2 * Math.sin(angle);
+
+        nodesMap.set(item.char.id, {
+          id: item.char.id,
+          pinyin: item.char.pinyin[0],
+          mastery: item.char.progress.mastery,
+          frequency: item.char.frequency,
+          components: item.char.components,
+          radical: item.char.radical,
+          level: 2,
+          baseX: bx,
+          baseY: by,
+          x: bx,
+          y: by,
+          oscPhaseX: Math.random() * Math.PI * 2,
+          oscPhaseY: Math.random() * Math.PI * 2,
+          oscSpeed: 0.4 + Math.random() * 0.4,
+        });
       });
     }
 
-    let rotationAngle = 0;
+    // 3D Glob Simulation Nodes for Show All Mode
+    let globAngle = 0;
+    const globNodes: { id: string; pinyin: string; mastery: MasteryLevel; rx: number; ry: number; rz: number }[] = [];
+
+    if (initialMode === 'showAll') {
+      const visibleChars = characters.filter((c) => activeFilters[c.progress.mastery]);
+      const radius = Math.min(width, height) * 0.38;
+
+      // Fibonacci sphere layout for 3D Glob galaxy
+      const phi = (1 + Math.sqrt(5)) / 2;
+      const total = visibleChars.length;
+
+      visibleChars.forEach((c, i) => {
+        const theta = (2 * Math.PI * i) / phi;
+        const y = 1 - (i / (total - 1)) * 2;
+        const radiusAtY = Math.sqrt(1 - y * y);
+        const x = Math.cos(theta) * radiusAtY;
+        const z = Math.sin(theta) * radiusAtY;
+
+        globNodes.push({
+          id: c.id,
+          pinyin: c.pinyin[0],
+          mastery: c.progress.mastery,
+          rx: x * radius,
+          ry: y * radius,
+          rz: z * radius,
+        });
+      });
+    }
 
     const render = () => {
-      // Smooth sliding animation for camera re-centering
-      if (slideAnimationRef.current.animating) {
-        const elapsed = Date.now() - slideAnimationRef.current.startTime;
-        const duration = 350; // ms
+      const timeSec = Date.now() * 0.001;
+
+      // Handle Smooth Swap Animation
+      let swapEase = 1;
+      if (swapAnimRef.current.animating) {
+        const elapsed = Date.now() - swapAnimRef.current.startTime;
+        const duration = swapAnimRef.current.duration;
         const progress = Math.min(1, elapsed / duration);
         // Cubic ease-out
-        const ease = 1 - Math.pow(1 - progress, 3);
-
-        const currentX =
-          slideAnimationRef.current.startPanX +
-          (slideAnimationRef.current.targetPanX - slideAnimationRef.current.startPanX) * ease;
-        const currentY =
-          slideAnimationRef.current.startPanY +
-          (slideAnimationRef.current.targetPanY - slideAnimationRef.current.startPanY) * ease;
-
-        setPanX(currentX);
-        setPanY(currentY);
+        swapEase = 1 - Math.pow(1 - progress, 3);
 
         if (progress >= 1) {
-          slideAnimationRef.current.animating = false;
+          swapAnimRef.current.animating = false;
         }
       }
 
@@ -269,48 +321,68 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
       ctx.scale(scale, scale);
       ctx.translate(-width / 2, -height / 2);
 
-      rotationAngle += 0.0015;
-
       if (initialMode === 'orbit') {
-        // Draw background space nebula orbits
+        // Calculate dynamic low-frequency oscillating positions for all nodes
+        nodesMap.forEach((node) => {
+          let bx = node.baseX;
+          let by = node.baseY;
+
+          // Interpolate if swap animation is active
+          if (swapAnimRef.current.animating) {
+            const start = swapAnimRef.current.nodeStarts.get(node.id);
+            const target = swapAnimRef.current.nodeTargets.get(node.id);
+            if (start && target) {
+              bx = start.x + (target.x - start.x) * swapEase;
+              by = start.y + (target.y - start.y) * swapEase;
+            }
+          }
+
+          // Low-frequency dynamic oscillation floating motion
+          const oscX = MAX_OSCILLATION_PX * Math.sin(node.oscSpeed * timeSec + node.oscPhaseX);
+          const oscY = MAX_OSCILLATION_PX * Math.cos(node.oscSpeed * timeSec * 0.8 + node.oscPhaseY);
+
+          node.x = bx + oscX;
+          node.y = by + oscY;
+        });
+
+        // 1. Draw Space Nebula Background Orbits
         const r1 = Math.min(width, height) * 0.28;
         const r2 = Math.min(width, height) * 0.44;
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, r1, 0, 2 * Math.PI);
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.12)';
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.14)';
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
         ctx.beginPath();
         ctx.arc(centerX, centerY, r2, 0, 2 * Math.PI);
-        ctx.setLineDash([6, 6]);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Render Links (Edges)
-        orbitGraph.links.forEach((link) => {
-          const srcId = typeof link.source === 'string' ? link.source : (link.source as NodeData).id;
-          const tgtId = typeof link.target === 'string' ? link.target : (link.target as NodeData).id;
+        // 2. Draw Links (Edges)
+        graphData.links.forEach((link) => {
+          const n1 = nodesMap.get(link.source);
+          const n2 = nodesMap.get(link.target);
 
-          const p1 = nodePosMap.get(srcId);
-          const p2 = nodePosMap.get(tgtId);
-
-          if (p1 && p2) {
+          if (n1 && n2) {
             ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(n1.x, n1.y);
+            ctx.lineTo(n2.x, n2.y);
 
             if (link.level === 1) {
-              // Direct Center Link
-              ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
-              ctx.lineWidth = 2;
+              // Solid glowing line for Center to Primary nodes
+              ctx.strokeStyle = 'rgba(0, 229, 255, 0.55)';
+              ctx.lineWidth = 2.2;
+              ctx.setLineDash([]);
             } else {
-              // Foggy Outer Link
+              // Foggy dashed line for secondary/inter-neighbor nodes
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+              ctx.lineWidth = 1.2;
               ctx.setLineDash([4, 4]);
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-              ctx.lineWidth = 1;
             }
 
             ctx.stroke();
@@ -318,79 +390,113 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
           }
         });
 
-        // Render Nodes
-        nodePosMap.forEach((pos) => {
-          const color = MASTERY_COLORS[pos.data.mastery];
-          const isCenter = pos.level === 0;
-          const isLevel2 = pos.level === 2;
+        // 3. Draw Nodes
+        nodesMap.forEach((node) => {
+          const color = MASTERY_COLORS[node.mastery];
+          const isCenter = node.level === 0;
+          const isSecondary = node.level === 2;
 
           ctx.save();
-          if (isLevel2) {
-            ctx.globalAlpha = 0.55; // Foggy outer atmosphere
+          if (isSecondary) {
+            ctx.globalAlpha = 0.5; // Foggy outer atmosphere
           }
 
+          const radius = isCenter ? 36 : isSecondary ? 18 : 23;
+
           // Node Circle
-          const r = isCenter ? 34 : isLevel2 ? 18 : 22;
           ctx.beginPath();
-          ctx.arc(pos.x, pos.y, r, 0, 2 * Math.PI);
-          ctx.fillStyle = isCenter ? 'rgba(20, 24, 38, 0.95)' : 'rgba(15, 18, 28, 0.85)';
+          ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+          ctx.fillStyle = isCenter ? 'rgba(20, 26, 42, 0.95)' : 'rgba(15, 18, 28, 0.9)';
           ctx.fill();
 
           ctx.strokeStyle = color;
           ctx.lineWidth = isCenter ? 3.5 : 2;
           ctx.stroke();
 
-          // Node Chinese Character
+          // Chinese Character
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = `${isCenter ? '700 28px' : isLevel2 ? '500 15px' : '600 18px'} Inter, sans-serif`;
+          ctx.font = `${isCenter ? '700 28px' : isSecondary ? '500 15px' : '600 18px'} Inter, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(pos.data.id, pos.x, pos.y - (isLevel2 ? 1 : 2));
+          ctx.fillText(node.id, node.x, node.y - (isSecondary ? 1 : 2));
 
           // Pinyin Label
-          if (!isLevel2 || scale >= 0.8) {
+          if (!isSecondary || scale >= 0.85) {
             ctx.fillStyle = 'var(--accent-cyan)';
             ctx.font = `${isCenter ? '600 12px' : '500 10px'} Inter, sans-serif`;
-            ctx.fillText(pos.data.pinyin, pos.x, pos.y + (isCenter ? 18 : 13));
+            ctx.fillText(node.pinyin, node.x, node.y + (isCenter ? 18 : 13));
           }
 
           ctx.restore();
         });
       } else {
-        // Show All Mode (Full Deck Simulation Graph)
-        const visibleChars = characters.filter((c) => activeFilters[c.progress.mastery]);
+        // 3D Glob Galaxy Sphere Mode (Show All)
+        globAngle += 0.003;
 
-        // Draw simplified grid / force nodes
-        const cols = Math.ceil(Math.sqrt(visibleChars.length));
-        const spacing = 80;
+        const projected = globNodes.map((n) => {
+          // Rotate around Y axis
+          const cosA = Math.cos(globAngle);
+          const sinA = Math.sin(globAngle);
 
-        visibleChars.forEach((c, idx) => {
-          const col = idx % cols;
-          const row = Math.floor(idx / cols);
-          const nx = (col - cols / 2) * spacing + centerX;
-          const ny = (row - cols / 2) * spacing + centerY;
+          const x3d = n.rx * cosA - n.rz * sinA;
+          const z3d = n.rx * sinA + n.rz * cosA;
+          const y3d = n.ry;
 
-          const color = MASTERY_COLORS[c.progress.mastery];
+          // Simple perspective projection
+          const perspective = 600;
+          const k = perspective / (perspective + z3d);
+          const px = centerX + x3d * k;
+          const py = centerY + y3d * k;
+          const pRadius = Math.max(8, 16 * k);
+          const alpha = Math.min(1, Math.max(0.2, (z3d + 300) / 600));
+
+          return { ...n, px, py, pRadius, alpha, z3d };
+        });
+
+        // Sort by Z for proper 3D depth rendering
+        projected.sort((a, b) => a.z3d - b.z3d);
+
+        // Draw 3D Glob edges between close nodes
+        for (let i = 0; i < projected.length; i += 4) {
+          for (let j = i + 1; j < Math.min(i + 6, projected.length); j++) {
+            const p1 = projected[i];
+            const p2 = projected[j];
+            const dist = Math.hypot(p1.px - p2.px, p1.py - p2.py);
+
+            if (dist < 120) {
+              ctx.beginPath();
+              ctx.moveTo(p1.px, p1.py);
+              ctx.lineTo(p2.px, p2.py);
+              ctx.strokeStyle = `rgba(0, 229, 255, ${0.12 * Math.min(p1.alpha, p2.alpha)})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw 3D Glob Nodes
+        projected.forEach((node) => {
+          const color = MASTERY_COLORS[node.mastery];
+
+          ctx.save();
+          ctx.globalAlpha = node.alpha;
 
           ctx.beginPath();
-          ctx.arc(nx, ny, 16, 0, 2 * Math.PI);
-          ctx.fillStyle = 'rgba(15, 18, 28, 0.85)';
+          ctx.arc(node.px, node.py, node.pRadius, 0, 2 * Math.PI);
+          ctx.fillStyle = 'rgba(15, 18, 28, 0.9)';
           ctx.fill();
+
           ctx.strokeStyle = color;
           ctx.lineWidth = 1.5;
           ctx.stroke();
 
           ctx.fillStyle = '#FFFFFF';
-          ctx.font = '600 14px Inter, sans-serif';
+          ctx.font = `${Math.round(12 * (node.pRadius / 16))}px Inter, sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(c.id, nx, ny - 1);
+          ctx.fillText(node.id, node.px, node.py - 1);
 
-          if (scale >= 0.9) {
-            ctx.fillStyle = 'var(--accent-cyan)';
-            ctx.font = '500 9px Inter, sans-serif';
-            ctx.fillText(c.pinyin[0], nx, ny + 11);
-          }
+          ctx.restore();
         });
       }
 
@@ -404,9 +510,9 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [initialMode, focusedChar, orbitGraph, activeFilters, panX, panY, scale]);
+  }, [initialMode, focusedChar, graphData, activeFilters, panX, panY, scale]);
 
-  // Pointer / Touch Handlers for Game Map Dragging
+  // Game Map Dragging Handlers
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     isDraggingRef.current = true;
     startDragRef.current = {
@@ -433,7 +539,6 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
 
     isDraggingRef.current = false;
 
-    // If pointer click without dragging -> handle node selection & smooth slide
     if (totalDragDistance < 6) {
       handleCanvasClick(e);
     }
@@ -446,7 +551,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     setScale(newScale);
   };
 
-  // Node Selection & Smooth Sliding Transition
+  // Node Click Selection & Smooth Swap Animation
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -459,76 +564,81 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // Transform click coords into Canvas world space
     const worldX = (clickX - (width / 2 + panX)) / scale + width / 2;
     const worldY = (clickY - (height / 2 + panY)) / scale + height / 2;
 
     if (initialMode === 'orbit') {
       // Check center node tap -> open detail modal
-      if (Math.hypot(worldX - centerX, worldY - centerY) <= 35 && focusedChar) {
+      if (Math.hypot(worldX - centerX, worldY - centerY) <= 38 && focusedChar) {
         setSelectedCharacter(focusedChar);
         return;
       }
 
-      // Check satellite node tap -> trigger smooth slide animation
+      // Check primary satellite nodes
       const r1 = Math.min(width, height) * 0.28;
-      const level1Nodes = orbitGraph.nodes.filter((n) => n.level === 1);
-      const n1 = level1Nodes.length;
+      const primaryNodes = graphData.rawNodes.filter((n) => n.level === 1);
+      const n1 = primaryNodes.length;
 
       for (let idx = 0; idx < n1; idx++) {
-        const node = level1Nodes[idx];
+        const item = primaryNodes[idx];
         const angle = (idx / n1) * 2 * Math.PI - Math.PI / 2;
         const nx = centerX + r1 * Math.cos(angle);
         const ny = centerY + r1 * Math.sin(angle);
 
         if (Math.hypot(worldX - nx, worldY - ny) <= 26) {
-          // Trigger smooth slide animation to center chosen character!
-          const deltaX = centerX - nx;
-          const deltaY = centerY - ny;
-
-          slideAnimationRef.current = {
-            animating: true,
-            startPanX: panX,
-            startPanY: panY,
-            targetPanX: panX + deltaX,
-            targetPanY: panY + deltaY,
-            startTime: Date.now(),
-          };
-
-          setFocusedCharId(node.id);
+          triggerNodeSwapAnimation(item.char.id, nx, ny, centerX, centerY);
           return;
         }
       }
 
-      // Check Level 2 foggy nodes
+      // Check secondary foggy nodes
       const r2 = Math.min(width, height) * 0.44;
-      const level2Nodes = orbitGraph.nodes.filter((n) => n.level === 2);
-      const n2 = level2Nodes.length;
+      const secondaryNodes = graphData.rawNodes.filter((n) => n.level === 2);
+      const n2 = secondaryNodes.length;
 
       for (let idx = 0; idx < n2; idx++) {
-        const node = level2Nodes[idx];
+        const item = secondaryNodes[idx];
         const angle = (idx / n2) * 2 * Math.PI - Math.PI / 4;
         const nx = centerX + r2 * Math.cos(angle);
         const ny = centerY + r2 * Math.sin(angle);
 
         if (Math.hypot(worldX - nx, worldY - ny) <= 22) {
-          const deltaX = centerX - nx;
-          const deltaY = centerY - ny;
-
-          slideAnimationRef.current = {
-            animating: true,
-            startPanX: panX,
-            startPanY: panY,
-            targetPanX: panX + deltaX,
-            targetPanY: panY + deltaY,
-            startTime: Date.now(),
-          };
-
-          setFocusedCharId(node.id);
+          triggerNodeSwapAnimation(item.char.id, nx, ny, centerX, centerY);
           return;
         }
       }
     }
+  };
+
+  const triggerNodeSwapAnimation = (
+    clickedCharId: string,
+    clickedX: number,
+    clickedY: number,
+    centerX: number,
+    centerY: number
+  ) => {
+    const nodeStarts = new Map<string, { x: number; y: number }>();
+    const nodeTargets = new Map<string, { x: number; y: number }>();
+
+    // Clicked node glides to center
+    nodeStarts.set(clickedCharId, { x: clickedX, y: clickedY });
+    nodeTargets.set(clickedCharId, { x: centerX, y: centerY });
+
+    // Former center node glides to clicked node's former position
+    nodeStarts.set(focusedCharId, { x: centerX, y: centerY });
+    nodeTargets.set(focusedCharId, { x: clickedX, y: clickedY });
+
+    swapAnimRef.current = {
+      animating: true,
+      startTime: Date.now(),
+      duration: 450,
+      oldCenterId: focusedCharId,
+      newCenterId: clickedCharId,
+      nodeStarts,
+      nodeTargets,
+    };
+
+    setFocusedCharId(clickedCharId);
   };
 
   const handleResetCamera = () => {
@@ -554,7 +664,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         touchAction: 'none',
       }}
     >
-      {/* Floating Info & Reset Camera Controls */}
+      {/* Floating Info & Reset Controls */}
       <div
         style={{
           position: 'absolute',
@@ -567,7 +677,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
       >
         <button
           onClick={handleResetCamera}
-          title="Center Map Camera"
+          title="Center Camera"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -611,7 +721,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         )}
       </div>
 
-      {/* Mastery Filter Footer Bar */}
+      {/* Mastery Filter Footer */}
       <div
         style={{
           position: 'absolute',
@@ -660,7 +770,7 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
         })}
       </div>
 
-      {/* Main Map Canvas */}
+      {/* Main Canvas */}
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}

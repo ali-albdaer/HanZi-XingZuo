@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { CharacterWithProgress } from '../../db/queries';
 import { sortCharacters } from '../../db/queries';
+import { searchAndRankCharacters } from '../../core/search';
 import { CharacterCard } from './CharacterCard';
 import { useDeckStore } from '../../stores/deckStore';
 import type { SortOption } from '../../config/app.config';
@@ -28,18 +29,10 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
 
   const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
 
-  // Filter first, then sort live
-  const filtered = characters.filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return (
-      c.id.includes(q) ||
-      c.pinyin.some((p) => p.toLowerCase().includes(q)) ||
-      c.definitions.some((d) => d.toLowerCase().includes(q))
-    );
-  });
-
-  const sortedAndFiltered = sortCharacters(filtered, sortOption);
+  // Apply tiered search ranking if search query is present, otherwise standard sort
+  const sortedAndFiltered = searchQuery.trim()
+    ? searchAndRankCharacters(characters, searchQuery)
+    : sortCharacters(characters, sortOption);
 
   return (
     <div style={{ padding: '16px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>

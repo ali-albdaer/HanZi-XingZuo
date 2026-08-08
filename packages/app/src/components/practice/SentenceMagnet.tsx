@@ -64,6 +64,23 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
     onComplete(isCorrect);
   };
 
+  // Keyboard Enter listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (submitted) {
+          handleNext();
+        } else if (selectedIndices.length > 0) {
+          handleSubmit();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [submitted, selectedIndices, isCorrect]);
+
   return (
     <div
       style={{
@@ -71,37 +88,25 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
         flexDirection: 'column',
         height: '100%',
         justifyContent: 'space-between',
-        padding: '16px 0',
+        padding: '8px 0 12px',
+        boxSizing: 'border-box',
       }}
     >
       {/* Target prompt header */}
       <div>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            color: 'var(--accent-cyan)',
-            marginBottom: 6,
-          }}
-        >
-          Sentence Magnet
-        </div>
-
-        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
           {sentence.english}
         </div>
 
         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          Reassemble the pre-segmented words in correct grammatical order.
+          Reassemble the word blocks in correct grammatical order.
         </div>
       </div>
 
       {/* Answer Tray (Constructed Sentence) */}
       <div
         style={{
-          minHeight: 80,
+          minHeight: 74,
           background: 'rgba(255, 255, 255, 0.03)',
           border: `2px dashed ${
             submitted
@@ -113,7 +118,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
               : 'var(--border-color)'
           }`,
           borderRadius: 16,
-          padding: 12,
+          padding: 10,
           display: 'flex',
           flexWrap: 'wrap',
           gap: 8,
@@ -125,7 +130,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
       >
         {selectedIndices.length === 0 ? (
           <span style={{ fontSize: 13, color: 'var(--text-muted)', width: '100%', textAlign: 'center', margin: 'auto' }}>
-            Tap word blocks below to build the sentence
+            Tap word blocks below to build sentence
           </span>
         ) : (
           selectedIndices.map((chunkId) => (
@@ -137,7 +142,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
                 background: 'rgba(0, 229, 255, 0.15)',
                 border: '1px solid var(--accent-cyan)',
                 color: 'var(--text-primary)',
-                padding: '8px 14px',
+                padding: '7px 12px',
                 borderRadius: 10,
                 fontSize: 18,
                 fontWeight: 600,
@@ -177,24 +182,20 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
             background: isCorrect ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
             border: `1px solid ${isCorrect ? '#4CAF50' : '#F44336'}`,
             borderRadius: 12,
-            padding: '12px 16px',
+            padding: '10px 14px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            {isCorrect ? (
-              <Check size={18} color="#4CAF50" />
-            ) : (
-              <X size={18} color="#F44336" />
-            )}
-            <span style={{ fontWeight: 700, color: isCorrect ? '#4CAF50' : '#F44336' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+            {isCorrect ? <Check size={16} color="#4CAF50" /> : <X size={16} color="#F44336" />}
+            <span style={{ fontWeight: 700, fontSize: 13, color: isCorrect ? '#4CAF50' : '#F44336' }}>
               {isCorrect ? 'Correct!' : 'Correct Sentence:'}
             </span>
           </div>
 
-          <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
             {sentence.chinese}
           </div>
-          <div style={{ fontSize: 14, color: 'var(--accent-cyan)', marginTop: 2 }}>
+          <div style={{ fontSize: 13, color: 'var(--accent-cyan)', marginTop: 2 }}>
             {sentence.pinyin}
           </div>
         </div>
@@ -202,7 +203,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
 
       {/* Word Chunk Bank */}
       {!submitted && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {shuffledBank.map((item) => {
             const isUsed = selectedIndices.includes(item.id);
             return (
@@ -214,9 +215,9 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
                   background: isUsed ? 'rgba(255, 255, 255, 0.02)' : 'var(--bg-card)',
                   border: `1px solid ${isUsed ? 'transparent' : 'var(--border-color)'}`,
                   color: isUsed ? 'transparent' : 'var(--text-primary)',
-                  padding: '10px 16px',
+                  padding: '9px 14px',
                   borderRadius: 12,
-                  fontSize: 20,
+                  fontSize: 19,
                   fontWeight: 600,
                   cursor: isUsed ? 'default' : 'pointer',
                   opacity: isUsed ? 0.2 : 1,
@@ -239,30 +240,30 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
             disabled={selectedIndices.length === 0}
             style={{
               width: '100%',
-              padding: '14px 0',
-              borderRadius: 14,
+              padding: '12px 0',
+              borderRadius: 12,
               border: 'none',
               background: selectedIndices.length === 0 ? 'rgba(255, 255, 255, 0.08)' : 'var(--accent-cyan)',
               color: selectedIndices.length === 0 ? 'var(--text-muted)' : '#000',
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 700,
               cursor: selectedIndices.length === 0 ? 'default' : 'pointer',
               transition: 'background 0.2s ease',
             }}
           >
-            Check Answer
+            Check Answer (Enter)
           </button>
         ) : (
           <button
             onClick={handleNext}
             style={{
               width: '100%',
-              padding: '14px 0',
-              borderRadius: 14,
+              padding: '12px 0',
+              borderRadius: 12,
               border: 'none',
               background: 'var(--accent-cyan)',
               color: '#000',
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
@@ -271,8 +272,8 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
               cursor: 'pointer',
             }}
           >
-            <span>Continue</span>
-            <ArrowRight size={18} />
+            <span>Next (Enter)</span>
+            <ArrowRight size={16} />
           </button>
         )}
       </div>

@@ -16,7 +16,8 @@ export const CharacterDetailModal: React.FC = () => {
 
   if (!selectedCharacter) return null;
 
-  const copyText = `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
+  const copyText =
+    `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
     selectedCharacter.sentences.map((s) => `• ${s.chinese} (${s.english})`).join('\n');
 
   const handlePracticeNow = async () => {
@@ -34,29 +35,30 @@ export const CharacterDetailModal: React.FC = () => {
         position: 'fixed',
         inset: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(8px)',
+        backdropFilter: 'blur(10px)',
         zIndex: 200,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        padding: '12px 16px',
       }}
       onClick={() => setSelectedCharacter(null)}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: 480,
-          maxHeight: '85vh',
+          maxWidth: 460,
+          maxHeight: '92vh',
           backgroundColor: 'var(--bg-secondary)',
-          borderRadius: 24,
+          borderRadius: 20,
           border: '1px solid var(--border-color)',
-          padding: 24,
-          overflowY: 'auto',
+          padding: '16px 20px',
+          overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          gap: 18,
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
+          justifyContent: 'space-between',
+          gap: 10,
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -66,21 +68,22 @@ export const CharacterDetailModal: React.FC = () => {
           <button
             onClick={() => setSelectedCharacter(null)}
             style={{
-              padding: 6,
+              padding: 5,
               borderRadius: '50%',
               backgroundColor: 'rgba(255, 255, 255, 0.08)',
               color: 'var(--text-secondary)',
+              cursor: 'pointer',
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Character Main Banner */}
-        <div style={{ textAlign: 'center', margin: '4px 0' }}>
+        {/* Character Main Header */}
+        <div style={{ textAlign: 'center', margin: '2px 0' }}>
           <div
             style={{
-              fontSize: 72,
+              fontSize: 52,
               fontWeight: 700,
               color: 'var(--text-primary)',
               lineHeight: 1,
@@ -90,20 +93,20 @@ export const CharacterDetailModal: React.FC = () => {
           </div>
           <div
             style={{
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: 600,
               color: 'var(--accent-cyan)',
-              marginTop: 8,
+              marginTop: 4,
             }}
           >
             {selectedCharacter.pinyin.join(', ')}
           </div>
           <div
             style={{
-              fontSize: 15,
+              fontSize: 14,
               color: 'var(--text-secondary)',
-              marginTop: 6,
-              lineHeight: 1.4,
+              marginTop: 4,
+              lineHeight: 1.3,
             }}
           >
             {selectedCharacter.definitions.join('; ')}
@@ -111,7 +114,7 @@ export const CharacterDetailModal: React.FC = () => {
         </div>
 
         {/* Meta info tags */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           <HskBadge level={selectedCharacter.hskLevel || '1'} />
 
           <div
@@ -119,14 +122,14 @@ export const CharacterDetailModal: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               gap: 4,
-              fontSize: 12,
+              fontSize: 11,
               color: 'var(--text-muted)',
               background: 'rgba(255, 255, 255, 0.04)',
-              padding: '4px 10px',
-              borderRadius: 8,
+              padding: '3px 8px',
+              borderRadius: 6,
             }}
           >
-            <Hash size={13} />
+            <Hash size={12} />
             <span>Rank #{selectedCharacter.frequency}</span>
           </div>
 
@@ -136,54 +139,48 @@ export const CharacterDetailModal: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                fontSize: 12,
+                fontSize: 11,
                 color: 'var(--text-muted)',
                 background: 'rgba(255, 255, 255, 0.04)',
-                padding: '4px 10px',
-                borderRadius: 8,
+                padding: '3px 8px',
+                borderRadius: 6,
               }}
             >
-              <GitFork size={13} />
+              <GitFork size={12} />
               <span>Radical: {selectedCharacter.radical}</span>
             </div>
           )}
         </div>
 
-        {/* Example Sentences */}
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Example Sentences ({selectedCharacter.sentences.length})
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {selectedCharacter.sentences.map((sentence, idx) => (
-              <div
-                key={sentence.id || idx}
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 12,
-                  padding: 12,
-                }}
-              >
-                <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-primary)' }}>
-                  {sentence.chinese}
-                </div>
-                {sentence.pinyin && (
-                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
-                    {sentence.pinyin}
-                  </div>
-                )}
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-                  {sentence.english}
-                </div>
+        {/* Example Sentences (No label, larger text, fitting 100%) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, justifyContent: 'center' }}>
+          {selectedCharacter.sentences.map((sentence, idx) => (
+            <div
+              key={sentence.id || idx}
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 12,
+                padding: '10px 14px',
+              }}
+            >
+              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                {sentence.chinese}
               </div>
-            ))}
-          </div>
+              {sentence.pinyin && (
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                  {sentence.pinyin}
+                </div>
+              )}
+              <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 3, lineHeight: 1.3 }}>
+                {sentence.english}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <CopyButton textToCopy={copyText} label="Copy Content" className="flex-1" />
 
           <button
@@ -194,12 +191,13 @@ export const CharacterDetailModal: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              padding: '12px 16px',
+              padding: '10px 14px',
               borderRadius: 10,
               background: 'linear-gradient(135deg, var(--accent-cyan), #0099FF)',
               color: '#000',
               fontWeight: 600,
               fontSize: 14,
+              cursor: 'pointer',
             }}
           >
             <Play size={16} fill="#000" />
