@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { DecksPage } from './pages/DecksPage';
 import { DeckDetailPage } from './pages/DeckDetailPage';
@@ -8,7 +8,7 @@ import { SettingsPage } from './pages/SettingsPage';
 
 export const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<AppShell />}>
           <Route index element={<Navigate to="/decks" replace />} />
@@ -18,7 +18,7 @@ export const App: React.FC = () => {
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
