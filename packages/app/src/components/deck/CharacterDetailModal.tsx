@@ -322,7 +322,7 @@ export const CharacterDetailModal: React.FC = () => {
                 padding: '10px 14px',
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+              <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                 {sentence.chinese}
               </div>
               {sentence.pinyin && (
