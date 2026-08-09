@@ -63,19 +63,7 @@ export const DecksPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             onClick={() => navigate('/settings')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-color)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
+            className="btn btn-icon"
             title="Settings"
           >
             <Settings size={18} />
@@ -83,18 +71,7 @@ export const DecksPage: React.FC = () => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 12,
-              background: 'var(--accent-cyan)',
-              color: '#000',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
+            className="btn btn-secondary"
           >
             <Plus size={16} />
             <span>Import Text</span>
@@ -260,12 +237,7 @@ export const DecksPage: React.FC = () => {
                   <button
                     onClick={(e) => handleDeleteDeck(e, deck.id)}
                     title="Delete Custom Deck"
-                    style={{
-                      padding: 6,
-                      borderRadius: 8,
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                    }}
+                    className="btn btn-icon"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -280,24 +252,8 @@ export const DecksPage: React.FC = () => {
       {/* Main Practice Action (Moved to Bottom) */}
       <button
         onClick={() => navigate('/practice')}
-        style={{
-          width: '100%',
-          padding: '16px 20px',
-          borderRadius: 18,
-          background: 'var(--accent-gradient)',
-          color: '#000',
-          border: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 10,
-          cursor: 'pointer',
-          boxShadow: '0 8px 24px rgba(24, 231, 236, 0.25)',
-          fontSize: 16,
-          fontWeight: 700,
-          marginTop: 10,
-          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-        }}
+        className="btn btn-primary"
+        style={{ width: '100%', padding: '16px 20px', fontSize: 16, marginTop: 10 }}
       >
         <Play fill="#000" size={20} />
         <span>Practice Active Deck</span>

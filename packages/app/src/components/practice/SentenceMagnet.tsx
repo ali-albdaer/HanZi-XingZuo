@@ -360,39 +360,16 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
           <button
             onClick={handleSubmit}
             disabled={selectedIndices.length === 0}
-            style={{
-              width: '100%',
-              padding: '12px 0',
-              borderRadius: 12,
-              border: 'none',
-              background: selectedIndices.length === 0 ? 'rgba(255, 255, 255, 0.08)' : 'var(--accent-cyan)',
-              color: selectedIndices.length === 0 ? 'var(--text-muted)' : '#000',
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: selectedIndices.length === 0 ? 'default' : 'pointer',
-              transition: 'background 0.2s ease',
-            }}
+            className="btn btn-primary"
+            style={{ width: '100%' }}
           >
             Check Answer [Enter]
           </button>
         ) : (
           <button
             onClick={handleNext}
-            style={{
-              width: '100%',
-              padding: '12px 0',
-              borderRadius: 12,
-              border: 'none',
-              background: 'var(--accent-cyan)',
-              color: '#000',
-              fontSize: 15,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              cursor: 'pointer',
-            }}
+            className="btn btn-primary"
+            style={{ width: '100%' }}
           >
             <span>Next [Enter]</span>
             <ArrowRight size={16} />

@@ -145,24 +145,8 @@ export const PracticePage: React.FC = () => {
       <button
         onClick={handleStartPractice}
         disabled={loading}
-        style={{
-          width: '100%',
-          maxWidth: 320,
-          padding: '16px 0',
-          borderRadius: 16,
-          border: 'none',
-          background: 'var(--accent-cyan)',
-          color: '#000',
-          fontSize: 18,
-          fontWeight: 700,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 10,
-          cursor: loading ? 'default' : 'pointer',
-          boxShadow: '0 4px 16px rgba(0, 229, 255, 0.3)',
-          transition: 'transform 0.15s ease',
-        }}
+        className="btn btn-primary"
+        style={{ width: '100%', maxWidth: 320, padding: '16px 0', fontSize: 18 }}
       >
         <Play size={20} fill="#000" />
         <span>{loading ? 'Preparing Session...' : 'Start Practice Session'}</span>

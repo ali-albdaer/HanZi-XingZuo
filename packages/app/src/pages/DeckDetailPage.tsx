@@ -47,18 +47,7 @@ export const DeckDetailPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <button
             onClick={() => navigate('/decks')}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              cursor: 'pointer',
-            }}
+            className="btn btn-icon"
           >
             <ArrowLeft size={16} />
           </button>

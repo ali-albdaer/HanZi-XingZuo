@@ -81,6 +81,90 @@ button {
   outline: none;
 }
 
+/* Button Design System */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Primary Action Buttons */
+.btn-primary {
+  padding: 12px 20px;
+  background: var(--accent-gradient);
+  color: #000;
+  font-size: 15px;
+  box-shadow: 0 4px 16px rgba(24, 231, 236, 0.2);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(24, 231, 236, 0.3);
+}
+
+/* Secondary Action Buttons */
+.btn-secondary {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary.active {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #000;
+}
+
+/* Danger Buttons */
+.btn-danger {
+  padding: 10px 16px;
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  color: #ff3b30;
+  font-size: 14px;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: rgba(255, 59, 48, 0.2);
+}
+
+/* Icon Only Buttons */
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
 /* App Viewport Shell */
 .app-viewport {
   display: flex;

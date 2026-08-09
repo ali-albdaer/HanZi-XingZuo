@@ -168,21 +168,13 @@ export const CharacterDetailModal: React.FC = () => {
         {currentIndex > 0 && (
           <button
             onClick={handlePrev}
+            className="btn btn-icon"
             style={{
               position: 'absolute',
               left: 'calc(50% - 260px)',
               top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              borderRadius: '50%',
               width: 44,
               height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
               backdropFilter: 'blur(4px)',
             }}
@@ -195,21 +187,13 @@ export const CharacterDetailModal: React.FC = () => {
         {currentIndex >= 0 && currentIndex < characters.length - 1 && (
           <button
             onClick={handleNext}
+            className="btn btn-icon"
             style={{
               position: 'absolute',
               right: 'calc(50% - 260px)',
               top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: 'none',
-              borderRadius: '50%',
               width: 44,
               height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-primary)',
-              cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
               backdropFilter: 'blur(4px)',
             }}
@@ -224,13 +208,8 @@ export const CharacterDetailModal: React.FC = () => {
           <MasteryBadge level={selectedCharacter.progress.mastery} />
           <button
             onClick={() => setSelectedCharacter(null)}
-            style={{
-              padding: 5,
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
+            className="btn btn-icon"
+            style={{ width: 28, height: 28 }}
             title="Close [Esc]"
           >
             <X size={18} />
@@ -341,22 +320,8 @@ export const CharacterDetailModal: React.FC = () => {
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <button
             onClick={handleToggleKnown}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 10,
-              background: selectedCharacter.progress.isKnown ? 'var(--accent-cyan)' : 'var(--bg-card)',
-              border: `1px solid ${selectedCharacter.progress.isKnown ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-              color: selectedCharacter.progress.isKnown ? '#000' : 'var(--text-primary)',
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
+            className={`btn btn-secondary ${selectedCharacter.progress.isKnown ? 'active' : ''}`}
+            style={{ flex: 1, padding: '12px 14px' }}
             title="Toggle Known [K]"
           >
             <CheckCircle2 size={16} />
@@ -367,20 +332,8 @@ export const CharacterDetailModal: React.FC = () => {
 
           <button
             onClick={handlePracticeNow}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, var(--accent-cyan), #0099FF)',
-              color: '#000',
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: 'pointer',
-            }}
+            className="btn btn-primary"
+            style={{ flex: 1, padding: '12px 14px' }}
           >
             <Play size={16} fill="#000" />
             <span>Practice Now</span>

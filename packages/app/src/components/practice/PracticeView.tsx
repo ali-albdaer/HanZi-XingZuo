@@ -62,16 +62,8 @@ export const PracticeView: React.FC = () => {
         </div>
         <button
           onClick={handleClose}
-          style={{
-            padding: '12px 24px',
-            borderRadius: 12,
-            background: 'var(--accent-cyan)',
-            color: '#000',
-            fontWeight: 700,
-            fontSize: 16,
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          className="btn btn-primary"
+          style={{ padding: '12px 24px', fontSize: 16 }}
         >
           Return to Deck
         </button>
@@ -86,7 +78,7 @@ export const PracticeView: React.FC = () => {
         flexDirection: 'column',
         height: '100%',
         backgroundColor: 'var(--bg-main)',
-        padding: '12px 18px calc(var(--tab-bar-height) + 24px)',
+        padding: '12px 18px 24px',
         boxSizing: 'border-box',
         overflow: 'hidden',
       }}
@@ -95,18 +87,7 @@ export const PracticeView: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
         <button
           onClick={handleClose}
-          style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: 'none',
-            color: 'var(--text-muted)',
-            borderRadius: '50%',
-            width: 36,
-            height: 36,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
+          className="btn btn-icon"
         >
           <X size={20} />
         </button>

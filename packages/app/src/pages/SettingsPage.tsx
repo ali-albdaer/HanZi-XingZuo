@@ -23,18 +23,9 @@ export const SettingsPage: React.FC = () => {
       <div style={{ marginTop: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
-            onClick={() => navigate('/decks')}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              backgroundColor: 'rgba(255,255,255,0.06)',
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
+            onClick={() => navigate(-1)}
+            className="btn btn-icon"
+            title="Go Back"
           >
             <ArrowLeft size={16} />
           </button>
@@ -75,20 +66,14 @@ export const SettingsPage: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setRepetitionFrequency(item.id)}
+                className={`btn btn-secondary ${isSelected ? 'active' : ''}`}
                 style={{
                   flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: 2,
-                  padding: '10px 8px',
-                  borderRadius: 10,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  backgroundColor: isSelected ? 'rgba(24, 231, 236, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                  color: isSelected ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                  border: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-                  cursor: 'pointer',
+                  padding: '12px 10px',
                   textAlign: 'center',
                 }}
               >
@@ -117,21 +102,8 @@ export const SettingsPage: React.FC = () => {
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <button
             onClick={() => setTheme('dark')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              backgroundColor: theme === 'dark' ? 'rgba(24, 231, 236, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-              color: theme === 'dark' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              border: theme === 'dark' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-              cursor: 'pointer',
-            }}
+            className={`btn btn-secondary ${theme === 'dark' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '10px 14px' }}
           >
             <Moon size={16} />
             <span>Dark Mode</span>
@@ -139,21 +111,8 @@ export const SettingsPage: React.FC = () => {
 
           <button
             onClick={() => setTheme('light')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 600,
-              backgroundColor: theme === 'light' ? 'rgba(2, 132, 199, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-              color: theme === 'light' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              border: theme === 'light' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-              cursor: 'pointer',
-            }}
+            className={`btn btn-secondary ${theme === 'light' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '10px 14px' }}
           >
             <Sun size={16} />
             <span>Light Mode</span>
@@ -178,21 +137,8 @@ export const SettingsPage: React.FC = () => {
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <button
             onClick={() => setInputMode('selection')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 500,
-              backgroundColor: inputMode === 'selection' ? 'rgba(24, 231, 236, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-              color: inputMode === 'selection' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              border: inputMode === 'selection' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-              cursor: 'pointer',
-            }}
+            className={`btn btn-secondary ${inputMode === 'selection' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '10px 14px' }}
           >
             <MousePointer size={16} />
             <span>Selection</span>
@@ -200,21 +146,8 @@ export const SettingsPage: React.FC = () => {
 
           <button
             onClick={() => setInputMode('keyboard')}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '10px 14px',
-              borderRadius: 10,
-              fontSize: 13,
-              fontWeight: 500,
-              backgroundColor: inputMode === 'keyboard' ? 'rgba(24, 231, 236, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-              color: inputMode === 'keyboard' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              border: inputMode === 'keyboard' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-              cursor: 'pointer',
-            }}
+            className={`btn btn-secondary ${inputMode === 'keyboard' ? 'active' : ''}`}
+            style={{ flex: 1, padding: '10px 14px' }}
           >
             <Keyboard size={16} />
             <span>Keyboard</span>

@@ -77,13 +77,8 @@ export const CreateDeckModal: React.FC<CreateDeckModalProps> = ({ onClose }) => 
           </div>
           <button
             onClick={onClose}
-            style={{
-              padding: 6,
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-            }}
+            className="btn btn-icon"
+            style={{ width: 28, height: 28 }}
           >
             <X size={18} />
           </button>
@@ -193,22 +188,8 @@ export const CreateDeckModal: React.FC<CreateDeckModalProps> = ({ onClose }) => 
           <button
             type="submit"
             disabled={!title.trim() || !rawText.trim() || isCreating}
-            style={{
-              width: '100%',
-              padding: '12px 0',
-              borderRadius: 12,
-              border: 'none',
-              background: !title.trim() || !rawText.trim() ? 'rgba(255, 255, 255, 0.08)' : 'var(--accent-cyan)',
-              color: !title.trim() || !rawText.trim() ? 'var(--text-muted)' : '#000',
-              fontSize: 15,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              cursor: !title.trim() || !rawText.trim() || isCreating ? 'default' : 'pointer',
-              marginTop: 6,
-            }}
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: 6 }}
           >
             <Check size={18} />
             <span>{isCreating ? 'Normalizing Text...' : 'Create Custom Deck'}</span>
