@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import { useDeckStore } from '../../stores/deckStore';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
@@ -27,6 +27,12 @@ export const CharacterDetailModal: React.FC = () => {
     ? `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
       selectedCharacter.sentences.map((s) => `• ${s.chinese} (${s.english})`).join('\n')
     : '';
+
+  const [expandedSentenceId, setExpandedSentenceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExpandedSentenceId(null);
+  }, [selectedCharacter]);
 
   const handlePracticeNow = async () => {
     if (!selectedCharacter) return;
@@ -239,11 +245,15 @@ export const CharacterDetailModal: React.FC = () => {
             {selectedCharacter.pinyin.join(', ')}
           </div>
           <div
+            className="custom-scrollbar"
             style={{
               fontSize: 16,
               color: 'var(--text-secondary)',
               marginTop: 8,
               lineHeight: 1.3,
+              height: 64,
+              overflowY: 'auto',
+              padding: '0 4px',
             }}
           >
             {selectedCharacter.definitions.join('; ')}
@@ -291,29 +301,65 @@ export const CharacterDetailModal: React.FC = () => {
 
         {/* Example Sentences */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
-          {selectedCharacter.sentences.map((sentence, idx) => (
-            <div
-              key={sentence.id || idx}
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 12,
-                padding: '10px 14px',
-              }}
-            >
-              <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                {sentence.chinese}
-              </div>
-              {sentence.pinyin && (
-                <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 4 }}>
-                  {sentence.pinyin}
+          {selectedCharacter.sentences.map((sentence, idx) => {
+            const isExpanded = expandedSentenceId === (sentence.id || String(idx));
+            return (
+              <div
+                key={sentence.id || idx}
+                onClick={() => setExpandedSentenceId(isExpanded ? null : (sentence.id || String(idx)))}
+                style={{
+                  backgroundColor: isExpanded ? 'var(--bg-secondary)' : 'var(--bg-card)',
+                  border: isExpanded ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                  borderRadius: 12,
+                  padding: isExpanded ? '14px 18px' : '10px 14px',
+                  minWidth: 0,
+                  cursor: 'pointer',
+                  textAlign: isExpanded ? 'center' : 'left',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isExpanded ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
+                  transform: isExpanded ? 'scale(1.02)' : 'scale(1)',
+                  zIndex: isExpanded ? 10 : 1,
+                  position: 'relative',
+                }}
+              >
+                <div style={{ 
+                  fontSize: isExpanded ? 32 : 28, 
+                  fontWeight: 600, 
+                  color: 'var(--text-primary)', 
+                  lineHeight: 1.3,
+                  whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: isExpanded ? 'clip' : 'ellipsis'
+                }}>
+                  {sentence.chinese}
                 </div>
-              )}
-              <div style={{ fontSize: 16, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.4 }}>
-                {sentence.english}
+                {sentence.pinyin && (
+                  <div style={{ 
+                    fontSize: isExpanded ? 18 : 16, 
+                    fontWeight: 500, 
+                    color: 'var(--accent-cyan)', 
+                    marginTop: 4,
+                    whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: isExpanded ? 'clip' : 'ellipsis'
+                  }}>
+                    {sentence.pinyin}
+                  </div>
+                )}
+                <div style={{ 
+                  fontSize: isExpanded ? 18 : 16, 
+                  color: 'var(--text-secondary)', 
+                  marginTop: isExpanded ? 8 : 4, 
+                  lineHeight: 1.4,
+                  whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: isExpanded ? 'clip' : 'ellipsis'
+                }}>
+                  {sentence.english}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Action Buttons */}
