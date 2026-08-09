@@ -3,7 +3,7 @@ import { useDeckStore } from '../../stores/deckStore';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
 import { CopyButton } from '../shared/CopyButton';
-import { X, Play, Hash, GitFork, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Play, Hash, GitFork, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../db/schema';
 import { useLiveQuery } from 'dexie-react-hooks';
