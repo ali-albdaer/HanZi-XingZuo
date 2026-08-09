@@ -14,7 +14,7 @@ export async function ensureDatabaseSeeded(): Promise<void> {
       await db.characters.clear();
       await db.sentences.clear();
     });
-    const response = await fetch('/seed-data.json');
+    const response = await fetch(`${import.meta.env.BASE_URL}seed-data.json`);
     if (!response.ok) {
       throw new Error(`Failed to fetch seed data: ${response.statusText}`);
     }
