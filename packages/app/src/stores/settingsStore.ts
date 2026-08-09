@@ -72,7 +72,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       listDisplayOptions: {
         showPinyin: true,
-        showRank: true,
+        showRank: false,
         showHsk: false,
       },
       listFilterOptions: {
@@ -84,10 +84,10 @@ export const useSettingsStore = create<SettingsState>()(
       },
       cardDisplayOptions: {
         showMeaning: true,
-        showMastery: true,
-        showHsk: true,
+        showMastery: false,
+        showHsk: false,
         showPinyin: true,
-        showRank: true,
+        showRank: false,
         showRadical: true,
         showSentences: true,
         showActions: true,
