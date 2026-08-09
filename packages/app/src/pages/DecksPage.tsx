@@ -35,7 +35,6 @@ export const DecksPage: React.FC = () => {
 
   const handleSelectDeck = (deckId: string) => {
     setActiveDeckId(deckId);
-    navigate(`/decks/${deckId}`);
   };
 
   const handleDeleteDeck = async (e: React.MouseEvent, deckId: string) => {
@@ -249,15 +248,26 @@ export const DecksPage: React.FC = () => {
         </>
       )}
 
-      {/* Main Practice Action (Moved to Bottom) */}
-      <button
-        onClick={() => navigate('/practice')}
-        className="btn btn-primary"
-        style={{ width: '100%', padding: '16px 20px', fontSize: 16, marginTop: 10 }}
-      >
-        <Play fill="#000" size={20} />
-        <span>Practice Active Deck</span>
-      </button>
+      {/* Main Actions (Moved to Bottom) */}
+      <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+        <button
+          onClick={() => navigate(`/decks/${activeDeckId}`)}
+          className="btn btn-secondary"
+          style={{ flex: 1, padding: '16px 12px', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          <BookOpen size={20} />
+          <span>View Deck</span>
+        </button>
+
+        <button
+          onClick={() => navigate('/practice')}
+          className="btn btn-primary"
+          style={{ flex: 1, padding: '16px 12px', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+        >
+          <Play fill="#000" size={20} />
+          <span>Practice</span>
+        </button>
+      </div>
 
       {/* Create Deck Modal */}
       {showCreateModal && <CreateDeckModal onClose={() => setShowCreateModal(false)} />}
