@@ -24,6 +24,17 @@ export interface ListFilterOptions {
   showMasteryGrey: boolean;
 }
 
+export interface CardDisplayOptions {
+  showMeaning: boolean;
+  showMastery: boolean;
+  showHsk: boolean;
+  showPinyin: boolean;
+  showRank: boolean;
+  showRadical: boolean;
+  showSentences: boolean;
+  showActions: boolean;
+}
+
 interface SettingsState {
   inputMode: 'selection' | 'keyboard';
   theme: AppTheme;
@@ -33,6 +44,7 @@ interface SettingsState {
   decayHours: DecayHours;
   listDisplayOptions: ListDisplayOptions;
   listFilterOptions: ListFilterOptions;
+  cardDisplayOptions: CardDisplayOptions;
 
   setInputMode: (mode: 'selection' | 'keyboard') => void;
   setTheme: (theme: AppTheme) => void;
@@ -42,6 +54,7 @@ interface SettingsState {
   setDecayHours: (decay: Partial<DecayHours>) => void;
   setListDisplayOptions: (opts: Partial<ListDisplayOptions>) => void;
   setListFilterOptions: (opts: Partial<ListFilterOptions>) => void;
+  setCardDisplayOptions: (opts: Partial<CardDisplayOptions>) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -69,6 +82,16 @@ export const useSettingsStore = create<SettingsState>()(
         showMasteryBronze: true,
         showMasteryGrey: true,
       },
+      cardDisplayOptions: {
+        showMeaning: true,
+        showMastery: true,
+        showHsk: true,
+        showPinyin: true,
+        showRank: true,
+        showRadical: true,
+        showSentences: true,
+        showActions: true,
+      },
 
       setInputMode: (mode) => set({ inputMode: mode }),
       setTheme: (theme) => {
@@ -84,6 +107,8 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({ listDisplayOptions: { ...state.listDisplayOptions, ...opts } })),
       setListFilterOptions: (opts) =>
         set((state) => ({ listFilterOptions: { ...state.listFilterOptions, ...opts } })),
+      setCardDisplayOptions: (opts) =>
+        set((state) => ({ cardDisplayOptions: { ...state.cardDisplayOptions, ...opts } })),
     }),
     {
       name: 'hanzi-settings-storage',

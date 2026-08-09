@@ -22,6 +22,7 @@ export const CharacterDetailModal: React.FC = () => {
   const randomSeed = useDeckStore((s) => s.randomSeed);
   const searchQuery = useDeckStore((s) => s.searchQuery);
   const showKnownCharacters = useSettingsStore((s) => s.listFilterOptions.showKnownCharacters);
+  const cardDisplayOptions = useSettingsStore((s) => s.cardDisplayOptions);
 
   const copyText = selectedCharacter
     ? `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
@@ -210,17 +211,11 @@ export const CharacterDetailModal: React.FC = () => {
         )}
 
         {/* Header bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <MasteryBadge level={selectedCharacter.progress.mastery} />
-          <button
-            onClick={() => setSelectedCharacter(null)}
-            className="btn btn-icon"
-            style={{ width: 28, height: 28 }}
-            title="Close [Esc]"
-          >
-            <X size={18} />
-          </button>
-        </div>
+        {cardDisplayOptions.showMastery && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+            <MasteryBadge level={selectedCharacter.progress.mastery} />
+          </div>
+        )}
 
         {/* Character Main Header */}
         <div style={{ textAlign: 'center', margin: '4px 0' }}>
@@ -234,151 +229,165 @@ export const CharacterDetailModal: React.FC = () => {
           >
             {selectedCharacter.id}
           </div>
-          <div
-            style={{
-              fontSize: 24,
-              fontWeight: 600,
-              color: 'var(--accent-cyan)',
-              marginTop: 4,
-            }}
-          >
-            {selectedCharacter.pinyin.join(', ')}
-          </div>
-          <div
-            className="custom-scrollbar"
-            style={{
-              fontSize: 16,
-              color: 'var(--text-secondary)',
-              marginTop: 8,
-              lineHeight: 1.3,
-              height: 64,
-              overflowY: 'auto',
-              padding: '0 4px',
-            }}
-          >
-            {selectedCharacter.definitions.join('; ')}
-          </div>
-        </div>
-
-        {/* Meta info tags */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
-          <HskBadge level={selectedCharacter.hskLevel || '1'} />
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              fontSize: 14,
-              color: 'var(--text-muted)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              padding: '4px 10px',
-              borderRadius: 6,
-            }}
-          >
-            <Hash size={14} />
-            <span>Rank #{selectedCharacter.frequency}</span>
-          </div>
-
-          {selectedCharacter.radical && (
+          {cardDisplayOptions.showPinyin && (
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 14,
-                color: 'var(--text-muted)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                padding: '4px 10px',
-                borderRadius: 6,
+                fontSize: 24,
+                fontWeight: 600,
+                color: 'var(--accent-cyan)',
+                marginTop: 4,
               }}
             >
-              <GitFork size={14} />
-              <span>Radical: {selectedCharacter.radical}</span>
+              {selectedCharacter.pinyin.join(', ')}
+            </div>
+          )}
+          {cardDisplayOptions.showMeaning && (
+            <div
+              className="custom-scrollbar"
+              style={{
+                fontSize: 16,
+                color: 'var(--text-secondary)',
+                marginTop: 8,
+                lineHeight: 1.3,
+                height: 64,
+                overflowY: 'auto',
+                padding: '0 4px',
+              }}
+            >
+              {selectedCharacter.definitions.join('; ')}
             </div>
           )}
         </div>
 
-        {/* Example Sentences */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
-          {selectedCharacter.sentences.map((sentence, idx) => (
-            <div
-              key={sentence.id || idx}
-              onClick={() => setExpandedSentenceId(sentence.id || String(idx))}
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 12,
-                padding: '10px 14px',
-                minWidth: 0,
-                cursor: 'pointer',
-                transition: 'background-color 0.2s, transform 0.1s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
-            >
-              <div style={{ 
-                fontSize: 28, 
-                fontWeight: 600, 
-                color: 'var(--text-primary)', 
-                lineHeight: 1.3,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {sentence.chinese}
+        {/* Meta info tags */}
+        {(cardDisplayOptions.showHsk || cardDisplayOptions.showRank || (cardDisplayOptions.showRadical && selectedCharacter.radical)) && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
+            {cardDisplayOptions.showHsk && (
+              <HskBadge level={selectedCharacter.hskLevel || '1'} />
+            )}
+
+            {cardDisplayOptions.showRank && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  fontSize: 14,
+                  color: 'var(--text-muted)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                }}
+              >
+                <Hash size={14} />
+                <span>Rank #{selectedCharacter.frequency}</span>
               </div>
-              {sentence.pinyin && (
+            )}
+
+            {cardDisplayOptions.showRadical && selectedCharacter.radical && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 14,
+                  color: 'var(--text-muted)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                }}
+              >
+                <GitFork size={14} />
+                <span>Radical: {selectedCharacter.radical}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Example Sentences */}
+        {cardDisplayOptions.showSentences && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
+            {selectedCharacter.sentences.map((sentence, idx) => (
+              <div
+                key={sentence.id || idx}
+                onClick={() => setExpandedSentenceId(sentence.id || String(idx))}
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  minWidth: 0,
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s, transform 0.1s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+              >
                 <div style={{ 
-                  fontSize: 16, 
-                  fontWeight: 500, 
-                  color: 'var(--accent-cyan)', 
-                  marginTop: 4,
+                  fontSize: 28, 
+                  fontWeight: 600, 
+                  color: 'var(--text-primary)', 
+                  lineHeight: 1.3,
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis'
                 }}>
-                  {sentence.pinyin}
+                  {sentence.chinese}
                 </div>
-              )}
-              <div style={{ 
-                fontSize: 16, 
-                color: 'var(--text-secondary)', 
-                marginTop: 4, 
-                lineHeight: 1.4,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
-                {sentence.english}
+                {sentence.pinyin && (
+                  <div style={{ 
+                    fontSize: 16, 
+                    fontWeight: 500, 
+                    color: 'var(--accent-cyan)', 
+                    marginTop: 4,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {sentence.pinyin}
+                  </div>
+                )}
+                <div style={{ 
+                  fontSize: 16, 
+                  color: 'var(--text-secondary)', 
+                  marginTop: 4, 
+                  lineHeight: 1.4,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {sentence.english}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-          <button
-            onClick={handleToggleKnown}
-            className={`btn btn-secondary ${selectedCharacter.progress.isKnown ? 'active' : ''}`}
-            style={{ flex: 1, padding: '12px 14px' }}
-            title="Toggle Known [K]"
-          >
-            <CheckCircle2 size={16} />
-            <span>{selectedCharacter.progress.isKnown ? 'Known [K]' : 'Mark Known [K]'}</span>
-          </button>
+        {cardDisplayOptions.showActions && (
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button
+              onClick={handleToggleKnown}
+              className={`btn btn-secondary ${selectedCharacter.progress.isKnown ? 'active' : ''}`}
+              style={{ flex: 1, padding: '12px 14px' }}
+              title="Toggle Known [K]"
+            >
+              <CheckCircle2 size={16} />
+              <span>{selectedCharacter.progress.isKnown ? 'Known [K]' : 'Mark Known [K]'}</span>
+            </button>
 
-          <CopyButton textToCopy={copyText} label="Copy" className="flex-1" />
+            <CopyButton textToCopy={copyText} label="Copy" className="flex-1" />
 
-          <button
-            onClick={handlePracticeNow}
-            className="btn btn-primary"
-            style={{ flex: 1, padding: '12px 14px' }}
-          >
-            <Play size={16} fill="#000" />
-            <span>Practice Now</span>
-          </button>
-        </div>
+            <button
+              onClick={handlePracticeNow}
+              className="btn btn-primary"
+              style={{ flex: 1, padding: '12px 14px' }}
+            >
+              <Play size={16} fill="#000" />
+              <span>Practice Now</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Pop-up for expanded sentence */}

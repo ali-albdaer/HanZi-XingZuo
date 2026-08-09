@@ -6,7 +6,7 @@ import { CharacterCard } from './CharacterCard';
 import { useDeckStore } from '../../stores/deckStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import type { SortOption, MasteryLevel } from '../../config/app.config';
-import { Search, LayoutGrid, List, SlidersHorizontal, ChevronDown, Eye } from 'lucide-react';
+import { Search, LayoutGrid, List, SlidersHorizontal, ChevronDown, Eye, Square } from 'lucide-react';
 import { HskBadge } from '../shared/HskBadge';
 
 interface DeckListViewProps {
@@ -54,9 +54,13 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const listFilterOptions = useSettingsStore((s) => s.listFilterOptions);
   const setListFilterOptions = useSettingsStore((s) => s.setListFilterOptions);
 
+  const cardDisplayOptions = useSettingsStore((s) => s.cardDisplayOptions);
+  const setCardDisplayOptions = useSettingsStore((s) => s.setCardDisplayOptions);
+
   const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
   const [showDisplayOptions, setShowDisplayOptions] = useState(true);
   const [showFilterOptions, setShowFilterOptions] = useState(false);
+  const [showCardViewOptions, setShowCardViewOptions] = useState(false);
 
   // Filter by Known status and mastery
   const filteredByKnown = characters.filter((c) => {
@@ -253,77 +257,146 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
             <SlidersHorizontal size={14} />
             <span>Filter</span>
           </button>
+          {/* Card-View options toggle */}
+          <button
+            onClick={() => setShowCardViewOptions((v) => !v)}
+            title="Card-View options"
+            className={`btn btn-secondary ${showCardViewOptions ? 'active' : ''}`}
+            style={{
+              padding: '7px 10px',
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              flexShrink: 0,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            <Square size={14} />
+            <span>Card-View</span>
+          </button>
         </div>
 
         {/* Row 2: Expandable options */}
-        {(showDisplayOptions || showFilterOptions) && (
+        {(showDisplayOptions || showFilterOptions || showCardViewOptions) && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 16,
               paddingTop: 2,
               paddingBottom: 2,
               flexWrap: 'wrap',
             }}
           >
-            {showDisplayOptions && [
-              { key: 'showPinyin', label: 'Pinyin' },
-              { key: 'showRank',   label: 'Rank' },
-              { key: 'showHsk',    label: 'HSK' },
-            ].map(({ key, label }) => {
-              const isOn = listDisplayOptions[key as keyof typeof listDisplayOptions] as boolean;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setListDisplayOptions({ [key]: !isOn })}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 20,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                    background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
-                    color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    transition: 'all 0.12s ease',
-                    letterSpacing: 0.2,
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            {showDisplayOptions && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2 }}>DISPLAY:</span>
+                {[
+                  { key: 'showPinyin', label: 'Pinyin' },
+                  { key: 'showRank',   label: 'Rank' },
+                  { key: 'showHsk',    label: 'HSK' },
+                ].map(({ key, label }) => {
+                  const isOn = listDisplayOptions[key as keyof typeof listDisplayOptions] as boolean;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setListDisplayOptions({ [key]: !isOn })}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                        background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
+                        color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        transition: 'all 0.12s ease',
+                        letterSpacing: 0.2,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             
-            {showFilterOptions && [
-              { key: 'showKnownCharacters', label: 'Known' },
-              { key: 'showMasteryGold', label: 'Gold' },
-              { key: 'showMasterySilver', label: 'Silver' },
-              { key: 'showMasteryBronze', label: 'Bronze' },
-              { key: 'showMasteryGrey', label: 'Grey' },
-            ].map(({ key, label }) => {
-              const isOn = listFilterOptions[key as keyof typeof listFilterOptions] as boolean;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setListFilterOptions({ [key]: !isOn })}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 20,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                    background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
-                    color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    transition: 'all 0.12s ease',
-                    letterSpacing: 0.2,
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            {showFilterOptions && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2 }}>FILTER:</span>
+                {[
+                  { key: 'showKnownCharacters', label: 'Known' },
+                  { key: 'showMasteryGold', label: 'Gold' },
+                  { key: 'showMasterySilver', label: 'Silver' },
+                  { key: 'showMasteryBronze', label: 'Bronze' },
+                  { key: 'showMasteryGrey', label: 'Grey' },
+                ].map(({ key, label }) => {
+                  const isOn = listFilterOptions[key as keyof typeof listFilterOptions] as boolean;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setListFilterOptions({ [key]: !isOn })}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                        background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
+                        color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        transition: 'all 0.12s ease',
+                        letterSpacing: 0.2,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {showCardViewOptions && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2 }}>CARD-VIEW:</span>
+                {[
+                  { key: 'showMeaning', label: 'Meaning' },
+                  { key: 'showMastery', label: 'Mastery' },
+                  { key: 'showHsk', label: 'HSK' },
+                  { key: 'showPinyin', label: 'Pinyin' },
+                  { key: 'showRank', label: 'Rank' },
+                  { key: 'showRadical', label: 'Radical' },
+                  { key: 'showSentences', label: 'Sentences' },
+                  { key: 'showActions', label: 'Actions' },
+                ].map(({ key, label }) => {
+                  const isOn = cardDisplayOptions[key as keyof typeof cardDisplayOptions] as boolean;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setCardDisplayOptions({ [key]: !isOn })}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 20,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                        background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
+                        color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        transition: 'all 0.12s ease',
+                        letterSpacing: 0.2,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
