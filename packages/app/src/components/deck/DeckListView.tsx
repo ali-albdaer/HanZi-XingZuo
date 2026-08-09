@@ -253,7 +253,9 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       #{item.frequency}
                     </span>
-                    <HskBadge level={item.hskLevel || '1'} />
+                    <div style={{ opacity: 0.75, display: 'flex' }}>
+                      <HskBadge level={item.hskLevel || '1'} size="sm" />
+                    </div>
                   </div>
                 </div>
               );

@@ -188,7 +188,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
       </div>
 
       {/* Reserved Result Pinyin Reveal Space (Prevents UI shifting/jumping) */}
-      <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ minHeight: 96, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         {submitted ? (
           <div
             style={{

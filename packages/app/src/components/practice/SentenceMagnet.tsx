@@ -251,7 +251,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
       </div>
 
       {/* Reserved Result Pinyin Reveal Space (Prevents UI shifting/jumping) */}
-      <div style={{ minHeight: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {submitted ? (
           <div
             style={{

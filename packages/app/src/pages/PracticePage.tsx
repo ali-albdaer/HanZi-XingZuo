@@ -4,17 +4,19 @@ import { generatePracticeQueue } from '../core/queue';
 import { PracticeView } from '../components/practice/PracticeView';
 import { getDeckCharacters } from '../db/queries';
 import { isMasteryDecayed } from '../core/srs';
+import { useDeckStore } from '../stores/deckStore';
 import { Play, Sparkles } from 'lucide-react';
 
 export const PracticePage: React.FC = () => {
   const { sessionActive, startSession } = usePracticeStore();
+  const activeDeckId = useDeckStore((s) => s.activeDeckId) || 'top-1000';
   const [loading, setLoading] = useState(false);
   const [dueCount, setDueCount] = useState(0);
   const [unseenCount, setUnseenCount] = useState(0);
 
   useEffect(() => {
     async function loadStats() {
-      const all = await getDeckCharacters('top-1000');
+      const all = await getDeckCharacters(activeDeckId);
       const now = Date.now();
 
       let due = 0;
@@ -40,7 +42,7 @@ export const PracticePage: React.FC = () => {
   const handleStartPractice = async () => {
     setLoading(true);
     try {
-      const queue = await generatePracticeQueue('top-1000', { sessionSize: 10 });
+      const queue = await generatePracticeQueue(activeDeckId, { sessionSize: 10 });
       startSession(queue);
     } catch (err) {
       console.error('Failed to generate practice queue:', err);
@@ -84,12 +86,8 @@ export const PracticePage: React.FC = () => {
       </div>
 
       <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-        Practice & Active Recall
+        Practice
       </h2>
-
-      <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, maxWidth: 320, lineHeight: 1.4 }}>
-        Interactive Sentence Magnet re-ordering and Contextual Cloze exercises tailored to your SRS memory decay.
-      </p>
 
       {/* Queue Breakdown Stats */}
       <div
@@ -114,7 +112,7 @@ export const PracticePage: React.FC = () => {
             {dueCount}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-            Due SRS Reviews
+            Need Practice
           </div>
         </div>
 

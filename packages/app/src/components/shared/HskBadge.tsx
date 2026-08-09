@@ -3,6 +3,7 @@ import React from 'react';
 interface HskBadgeProps {
   level: string;
   className?: string;
+  size?: 'sm' | 'md';
 }
 
 const HSK_COLORS: Record<string, { bg: string; color: string; border: string }> = {
@@ -15,7 +16,7 @@ const HSK_COLORS: Record<string, { bg: string; color: string; border: string }> 
   '7-9': { bg: 'rgba(233, 30, 99, 0.15)', color: '#FF4081', border: 'rgba(233, 30, 99, 0.35)' },
 };
 
-export const HskBadge: React.FC<HskBadgeProps> = ({ level, className = '' }) => {
+export const HskBadge: React.FC<HskBadgeProps> = ({ level, className = '', size = 'md' }) => {
   const theme = HSK_COLORS[level] || HSK_COLORS['7-9'];
 
   return (
@@ -24,9 +25,9 @@ export const HskBadge: React.FC<HskBadgeProps> = ({ level, className = '' }) => 
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        padding: '2px 7px',
-        borderRadius: 6,
-        fontSize: 10,
+        padding: size === 'sm' ? '1px 5px' : '2px 7px',
+        borderRadius: size === 'sm' ? 4 : 6,
+        fontSize: size === 'sm' ? 9 : 10,
         fontWeight: 700,
         letterSpacing: 0.5,
         backgroundColor: theme.bg,

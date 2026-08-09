@@ -47,10 +47,10 @@ export async function ensureDatabaseSeeded(): Promise<void> {
     }));
 
     await db.transaction('rw', [db.decks, db.characters, db.sentences, db.userProgress], async () => {
-      await db.decks.bulkAdd([builtInDeck, vaultDeck]);
-      await db.characters.bulkAdd(characters);
-      await db.sentences.bulkAdd(sentences);
-      await db.userProgress.bulkAdd(initialProgress);
+      await db.decks.bulkPut([builtInDeck, vaultDeck]);
+      await db.characters.bulkPut(characters);
+      await db.sentences.bulkPut(sentences);
+      await db.userProgress.bulkPut(initialProgress);
     });
 
     console.log('[SEED] Database successfully populated!');

@@ -1,26 +1,28 @@
-import { APP_CONFIG, type MasteryLevel } from '../config/app.config';
+import { type MasteryLevel } from '../config/app.config';
 import { db, type UserProgressEntity } from '../db/schema';
+import { useSettingsStore } from '../stores/settingsStore';
 
 export function isMasteryDecayed(
   mastery: MasteryLevel,
   lastReviewedAt: number | null,
   now: number = Date.now(),
-  multiplier: number = 3.0 // Default 3x spacing for reduced repetition
+  multiplier: number = 1.0
 ): boolean {
   if (mastery === 'grey' || !lastReviewedAt) {
     return false;
   }
 
   const elapsedHours = (now - lastReviewedAt) / (1000 * 60 * 60);
+  const { decayHours } = useSettingsStore.getState();
 
   if (mastery === 'gold') {
-    return elapsedHours > APP_CONFIG.mastery.decayHours.goldToSilver * multiplier;
+    return elapsedHours > decayHours.goldToSilver * multiplier;
   }
   if (mastery === 'silver') {
-    return elapsedHours > APP_CONFIG.mastery.decayHours.silverToBronze * multiplier;
+    return elapsedHours > decayHours.silverToBronze * multiplier;
   }
   if (mastery === 'bronze') {
-    return elapsedHours > APP_CONFIG.mastery.decayHours.bronzeToGrey * multiplier;
+    return elapsedHours > decayHours.bronzeToGrey * multiplier;
   }
 
   return false;
@@ -37,23 +39,24 @@ export function calculateEffectiveMastery(
   }
 
   const elapsedHours = (now - lastReviewedAt) / (1000 * 60 * 60);
+  const { decayHours } = useSettingsStore.getState();
 
   if (mastery === 'gold') {
-    if (elapsedHours > APP_CONFIG.mastery.decayHours.goldToSilver) {
+    if (elapsedHours > decayHours.goldToSilver) {
       return 'silver';
     }
     return 'gold';
   }
 
   if (mastery === 'silver') {
-    if (elapsedHours > APP_CONFIG.mastery.decayHours.silverToBronze) {
+    if (elapsedHours > decayHours.silverToBronze) {
       return 'bronze';
     }
     return 'silver';
   }
 
   if (mastery === 'bronze') {
-    if (elapsedHours > APP_CONFIG.mastery.decayHours.bronzeToGrey) {
+    if (elapsedHours > decayHours.bronzeToGrey) {
       return 'grey';
     }
     return 'bronze';

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
-import { APP_CONFIG } from '../config/app.config';
 import { Settings, Keyboard, MousePointer, Info, Sun, Moon, RefreshCw } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -13,6 +12,9 @@ export const SettingsPage: React.FC = () => {
   const repetitionFrequency = useSettingsStore((s) => s.repetitionFrequency);
   const setRepetitionFrequency = useSettingsStore((s) => s.setRepetitionFrequency);
 
+  const decayHours = useSettingsStore((s) => s.decayHours);
+  const setDecayHours = useSettingsStore((s) => s.setDecayHours);
+
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       <div style={{ marginTop: 8 }}>
@@ -20,9 +22,6 @@ export const SettingsPage: React.FC = () => {
           <Settings size={22} style={{ color: 'var(--accent-cyan)' }} />
           <h1 style={{ fontSize: 22, fontWeight: 700 }}>Settings</h1>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-          Application preferences and SRS review settings
-        </p>
       </div>
 
       {/* Repetition Frequency & Spacing Preference */}
@@ -40,9 +39,6 @@ export const SettingsPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
           <RefreshCw size={16} style={{ color: 'var(--accent-cyan)' }} />
           <span>Repetition Frequency (SRS Spacing)</span>
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          Controls how frequently previously learned words repeat in practice sessions.
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -96,9 +92,6 @@ export const SettingsPage: React.FC = () => {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 600 }}>Appearance Theme</div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          Choose your visual color theme.
-        </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <button
@@ -160,9 +153,6 @@ export const SettingsPage: React.FC = () => {
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 600 }}>Default Cloze Input Mode</div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-          Keyboard mode requires native Chinese keyboard typing to unlock Gold mastery.
-        </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
           <button
@@ -211,7 +201,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Centralized Config Display */}
+      {/* Decay Config */}
       <div
         style={{
           backgroundColor: 'var(--bg-card)',
@@ -225,23 +215,38 @@ export const SettingsPage: React.FC = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600 }}>
           <Info size={16} style={{ color: 'var(--accent-cyan)' }} />
-          <span>Centralized Config (`app.config.ts`)</span>
+          <span>SRS Decay Configuration (Hours)</span>
         </div>
 
-        <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 8, color: 'var(--text-secondary)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Gold → Silver Decay:</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{APP_CONFIG.mastery.decayHours.goldToSilver}h (30 days)</span>
+        <div style={{ fontSize: 13, display: 'flex', flexDirection: 'column', gap: 12, color: 'var(--text-secondary)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Gold → Silver (Default 720):</span>
+            <input
+              type="number"
+              value={decayHours?.goldToSilver || 720}
+              onChange={(e) => setDecayHours({ goldToSilver: Number(e.target.value) || 0 })}
+              style={{ width: 80, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', textAlign: 'right' }}
+            />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Silver → Bronze Decay:</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{APP_CONFIG.mastery.decayHours.silverToBronze}h (7 days)</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Silver → Bronze (Default 168):</span>
+            <input
+              type="number"
+              value={decayHours?.silverToBronze || 168}
+              onChange={(e) => setDecayHours({ silverToBronze: Number(e.target.value) || 0 })}
+              style={{ width: 80, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', textAlign: 'right' }}
+            />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Bronze → Grey Decay:</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{APP_CONFIG.mastery.decayHours.bronzeToGrey}h (2 days)</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Bronze → Grey (Default 48):</span>
+            <input
+              type="number"
+              value={decayHours?.bronzeToGrey || 48}
+              onChange={(e) => setDecayHours({ bronzeToGrey: Number(e.target.value) || 0 })}
+              style={{ width: 80, padding: '4px 8px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', textAlign: 'right' }}
+            />
           </div>
         </div>
       </div>

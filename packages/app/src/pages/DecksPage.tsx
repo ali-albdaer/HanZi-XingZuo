@@ -57,9 +57,6 @@ export const DecksPage: React.FC = () => {
               HanZi XingZuo
             </h1>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-            Contextual reading & constellation mastery
-          </p>
         </div>
 
         <button
@@ -80,10 +77,6 @@ export const DecksPage: React.FC = () => {
           <Plus size={16} />
           <span>Import Text</span>
         </button>
-      </div>
-
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        Curated Decks
       </div>
 
       {/* Deck Cards */}

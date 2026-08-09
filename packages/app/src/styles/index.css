@@ -95,24 +95,23 @@ button {
   flex: 1;
   width: 100%;
   height: calc(100dvh - var(--tab-bar-height));
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-/* Custom Neat Cyan Scrollbar for List View */
+/* Subtle Scrollbar for List View */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 18, 28, 0.6);
-  border-radius: 4px;
+  background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  box-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #33ecff;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Bottom Tab Navigation */
@@ -216,16 +215,24 @@ button {
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
 }
 
-/* Custom Scrollbar for scrollable lists */
+/* Global Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 18, 28, 0.6);
-  border-radius: 4px;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  box-shadow: 0 0 8px var(--accent-cyan-muted);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }

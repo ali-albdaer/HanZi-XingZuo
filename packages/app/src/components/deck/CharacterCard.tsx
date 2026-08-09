@@ -3,6 +3,7 @@ import type { CharacterWithProgress } from '../../db/queries';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
 import { useDeckStore } from '../../stores/deckStore';
+import { MASTERY_COLORS } from '../../config/app.config';
 
 interface CharacterCardProps {
   item: CharacterWithProgress;
@@ -31,15 +32,15 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
         {/* Character Box */}
         <div
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid var(--border-color)',
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: `2px solid ${MASTERY_COLORS[item.progress.mastery]}80`, // 50% opacity
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 24,
+            fontSize: 26,
             fontWeight: 700,
             color: 'var(--text-primary)',
             flexShrink: 0,
@@ -75,8 +76,8 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
       </div>
 
       {/* Badges on Right */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <HskBadge level={item.hskLevel || '1'} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, opacity: 0.85 }}>
+        <HskBadge level={item.hskLevel || '1'} size="sm" />
         <MasteryBadge level={item.progress.mastery} showLabel={false} />
       </div>
     </div>
