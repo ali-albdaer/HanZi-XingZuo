@@ -2,12 +2,8 @@ import { db, type DeckEntity, type CharacterEntity, type SentenceEntity, type Us
 
 export async function ensureDatabaseSeeded(): Promise<void> {
   const existingDecks = await db.decks.count();
-  const sampleSentence = await db.sentences.toCollection().first();
-  const sampleChar = await db.characters.get('上');
-  const isNoisy = sampleChar && sampleChar.definitions.some((d) => d.includes('used in') || d.includes('surname'));
-  const hasHsk = sampleChar && sampleChar.hskLevel;
 
-  if (existingDecks > 0 && sampleSentence && sampleSentence.pinyin && sampleChar && !isNoisy && hasHsk) {
+  if (existingDecks > 0) {
     return;
   }
 

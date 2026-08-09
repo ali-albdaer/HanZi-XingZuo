@@ -92,15 +92,37 @@ def get_subtlex_top1000():
     return top_chars
 
 NOISE_RE = re.compile(
-    r'^(used in|variant of|old variant of|archaic variant of|surname|see|same as|CL:|abbr\. for|component in|radical in|classifier|often used in|Tw\))|\b(used in transliterations|surname|transliteration|classifier)\b',
+    r'^(used in|variant of|old variant of|archaic variant of|surname|see|same as|CL:|abbr\. for|component in|radical in|classifier|often used in|Tw\)'
+    r'|\(c\. \d+|legendary|transliteration of|abbr\.? for|\(abbr|short name for)',
     re.IGNORECASE
 )
+NOISE_INLINE_RE = re.compile(
+    r'\(CL:[^)]+\)|\(variant[^)]*\)|\(c\. \d+[^)]*\)|\([a-zA-Z0-9, ]+\u4e00[^)]*\)|\([^)]*\u4e00[^)]*\)',
+    re.IGNORECASE
+)
+CHINESE_CHAR_RE = re.compile(r'[\u4e00-\u9fff]')
+ARBIC_NUM_RE = re.compile(r'[0-9]')
 
 def clean_def_text(d: str) -> str:
-    d = re.sub(r'\[[a-zA-Z0-9\s]+\]', '', d)
+    # Remove classifier notations like (CL:条,根[gen1])
+    d = NOISE_INLINE_RE.sub('', d)
+    # Remove bracketed pinyin/refs like [gen1]
+    d = re.sub(r'\[[a-zA-Z0-9\s,]+\]', '', d)
+    # Remove traditional|simplified pairs
     d = re.sub(r'[\u4e00-\u9fff]+\|[\u4e00-\u9fff]+', '', d)
-    d = re.sub(r'\(bound form\)', '', d)
-    d = re.sub(r'\s+', ' ', d).strip(' ;,()')
+    # Remove remaining Chinese characters and their surrounding parenthetical context
+    d = re.sub(r'\([^)]*[\u4e00-\u9fff][^)]*\)', '', d)
+    d = CHINESE_CHAR_RE.sub('', d)
+    # Remove other known noise phrases
+    d = re.sub(r'\(bound form\)', '', d, flags=re.IGNORECASE)
+    d = re.sub(r'\(literary\)', '', d, flags=re.IGNORECASE)
+    d = re.sub(r'\(coll\.\)', '', d, flags=re.IGNORECASE)
+    d = re.sub(r'\(old\)', '', d, flags=re.IGNORECASE)
+    # Normalise whitespace and strip stray punctuation
+    d = re.sub(r'\s+', ' ', d).strip(' ;,().\u3002')
+    # Cap at 80 characters, cutting at last word boundary
+    if len(d) > 80:
+        d = d[:80].rsplit(' ', 1)[0].rstrip(' ;,')
     return d
 
 def is_duplicate_meaning(new_def: str, existing_defs: list[str]) -> bool:
@@ -205,7 +227,11 @@ def get_tatoeba_sentences(top1000_set):
             parts = line.strip().split('\t')
             if len(parts) >= 3:
                 sid, lang, text = parts[0], parts[1], parts[2]
-                if len(text) <= 12: # Only short sentences for mobile practice
+                # Raised to 14 chars for better sentence variety (was 12)
+                if len(text) <= 14:
+                    # Reject sentences with Arabic numerals (break pinyin alignment)
+                    if ARBIC_NUM_RE.search(text):
+                        continue
                     # Convert Traditional Chinese to Simplified Chinese
                     simp_text = cc_t2s.convert(text)
                     cmn_map[sid] = simp_text
@@ -257,19 +283,36 @@ def format_sentence_pinyin(chinese_text: str) -> str:
             res.append(s)
     return ''.join(res)
 
+def validate_chunks(chunks: list, original: str) -> list:
+    """Ensure re-joining chunks reproduces the original Chinese string exactly."""
+    rejoined = ''.join(chunks)
+    if rejoined != original:
+        # Fall back to character-by-character split to guarantee correctness
+        print(f"[WARN] Chunk mismatch for '{original}' -> '{rejoined}'. Falling back to char split.")
+        return list(original)
+    return chunks
+
+def validate_pinyin_count(chinese_text: str, pinyin_str: str) -> bool:
+    """Check that the number of pinyin tokens matches the number of Chinese characters."""
+    hanzi_count = len(re.findall(r'[\u4e00-\u9fff]', chinese_text))
+    py_tokens = [t for t in pinyin_str.split() if re.search(r'[a-zA-Z]', t)]
+    return abs(len(py_tokens) - hanzi_count) <= 1
+
 def generate_fallback_sentences(char, pinyin_str, def_str):
-    # Standard natural template sentences for characters missing enough Tatoeba sentences
+    # More natural fallback templates (last resort only)
     patterns = [
-        (f"这是{char}。", f"This is '{def_str}'."),
-        (f"你喜欢{char}吗？", f"Do you like '{def_str}'?"),
-        (f"{char}是什么？", f"What is '{def_str}'?"),
+        (f"我学了这个字：{char}。", f"I learned this character: '{def_str}'."),
+        (f"请看这个字{char}。", f"Please look at this character '{def_str}'."),
+        (f"这个字{char}很常用。", f"The character '{def_str}' is very common."),
     ]
     results = []
     for c_text, e_text in patterns:
-        chunks = jieba.lcut(c_text)
+        raw_chunks = jieba.lcut(c_text)
+        chunks = validate_chunks(raw_chunks, c_text)
+        py_text = format_sentence_pinyin(c_text)
         results.append({
             "chinese": c_text,
-            "pinyin": format_sentence_pinyin(c_text),
+            "pinyin": py_text,
             "english": e_text,
             "chunks": chunks
         })
@@ -287,43 +330,56 @@ def main():
     tatoeba_pairs = get_tatoeba_sentences(top1000_set)
     
     char_to_sentences = {c: [] for c in top1000_chars}
-    
-    print("[PIPELINE] Assigning Tatoeba sentences (Pass 1: 100% Top-1000 chars)...")
-    for c_text, e_text in tatoeba_pairs:
+
+    def try_assign_sentence(c_text, e_text, threshold: float):
         chars_in_sent = [c for c in c_text if '\u4e00' <= c <= '\u9fff']
         if not chars_in_sent:
-            continue
-        if all(c in top1000_set for c in chars_in_sent):
-            chunks = jieba.lcut(c_text)
-            py_text = format_sentence_pinyin(c_text)
-            for c in chars_in_sent:
-                if c in char_to_sentences and len(char_to_sentences[c]) < 3:
-                    if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
-                        char_to_sentences[c].append({
-                            "chinese": c_text,
-                            "pinyin": py_text,
-                            "english": e_text,
-                            "chunks": chunks
-                        })
+            return
+        in_top_cnt = sum(1 for c in chars_in_sent if c in top1000_set)
+        if in_top_cnt / len(chars_in_sent) < threshold:
+            return
+        raw_chunks = jieba.lcut(c_text)
+        chunks = validate_chunks(raw_chunks, c_text)
+        py_text = format_sentence_pinyin(c_text)
+        if not validate_pinyin_count(c_text, py_text):
+            print(f"[WARN] Pinyin mismatch, skipping sentence: {c_text}")
+            return
+        for c in chars_in_sent:
+            if c in char_to_sentences and len(char_to_sentences[c]) < 3:
+                if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
+                    char_to_sentences[c].append({
+                        "chinese": c_text,
+                        "pinyin": py_text,
+                        "english": e_text,
+                        "chunks": chunks
+                    })
+
+    print("[PIPELINE] Assigning Tatoeba sentences (Pass 1: 100% Top-1000 chars)...")
+    for c_text, e_text in tatoeba_pairs:
+        try_assign_sentence(c_text, e_text, 1.0)
 
     print("[PIPELINE] Assigning Tatoeba sentences (Pass 2: >= 85% Top-1000 chars)...")
     for c_text, e_text in tatoeba_pairs:
+        try_assign_sentence(c_text, e_text, 0.85)
+
+    print("[PIPELINE] Assigning Tatoeba sentences (Pass 3: >= 70% Top-1000 chars, for under-covered chars)...")
+    under_covered = {c for c, sents in char_to_sentences.items() if len(sents) < 3}
+    print(f"[PIPELINE] Pass 3: {len(under_covered)} characters still need more sentences.")
+    for c_text, e_text in tatoeba_pairs:
         chars_in_sent = [c for c in c_text if '\u4e00' <= c <= '\u9fff']
         if not chars_in_sent:
             continue
-        in_top_cnt = sum(1 for c in chars_in_sent if c in top1000_set)
-        if in_top_cnt / len(chars_in_sent) >= 0.85:
-            chunks = jieba.lcut(c_text)
-            py_text = format_sentence_pinyin(c_text)
-            for c in chars_in_sent:
-                if c in char_to_sentences and len(char_to_sentences[c]) < 3:
-                    if not any(s['chinese'] == c_text for s in char_to_sentences[c]):
-                        char_to_sentences[c].append({
-                            "chinese": c_text,
-                            "pinyin": py_text,
-                            "english": e_text,
-                            "chunks": chunks
-                        })
+        # Only run Pass 3 for sentences relevant to under-covered chars
+        if not any(c in under_covered for c in chars_in_sent):
+            continue
+        try_assign_sentence(c_text, e_text, 0.70)
+        # Update under_covered after each assignment
+        under_covered = {c for c, sents in char_to_sentences.items() if len(sents) < 3}
+        if not under_covered:
+            break
+
+    remaining = sum(1 for sents in char_to_sentences.values() if len(sents) < 3)
+    print(f"[PIPELINE] After all passes: {remaining} characters still need fallback sentences.")
                     
     # Generate seed JSON objects
     characters_out = []
@@ -350,14 +406,20 @@ def main():
         if m.get('definition'):
             for part in m['definition'].split(';'):
                 cleaned = clean_def_text(part)
-                if cleaned and not NOISE_RE.search(cleaned) and not is_duplicate_meaning(cleaned, defs):
+                if cleaned and len(cleaned) > 2 and not NOISE_RE.search(cleaned) and not is_duplicate_meaning(cleaned, defs):
                     defs.append(cleaned)
         for entry in ce:
             for d in entry['definitions']:
-                if len(defs) < 3 and not NOISE_RE.search(d) and not is_duplicate_meaning(d, defs):
-                    defs.append(d)
+                cleaned_d = clean_def_text(d)
+                if len(defs) < 3 and cleaned_d and len(cleaned_d) > 2 and not NOISE_RE.search(cleaned_d) and not is_duplicate_meaning(cleaned_d, defs):
+                    defs.append(cleaned_d)
         if not defs:
-            defs = [char]
+            # Last resort: use the raw MakeMeAHanzi definition (usually 1-3 English words)
+            mmh_raw = m.get('definition', '')
+            if mmh_raw:
+                defs = [clean_def_text(mmh_raw) or mmh_raw]
+            else:
+                defs = [f'character {char}']
             
         # HSK Level
         hsk_lvl = str(hsk_map.get(char, "7-9"))
@@ -385,14 +447,16 @@ def main():
                     sents.append(fb)
                     
         for s in sents[:3]:
+            py = s.get('pinyin', format_sentence_pinyin(s['chinese']))
+            validated_chunks = validate_chunks(s['chunks'], s['chinese'])
             sentences_out.append({
                 "id": f"s-{sent_id_counter}",
                 "characterId": char,
                 "deckId": "top-1000",
                 "chinese": s["chinese"],
-                "pinyin": s.get("pinyin", format_sentence_pinyin(s["chinese"])),
+                "pinyin": py,
                 "english": s["english"],
-                "chunks": s["chunks"]
+                "chunks": validated_chunks
             })
             sent_id_counter += 1
             
