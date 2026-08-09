@@ -118,50 +118,26 @@ export const ConstellationCanvas: React.FC<ConstellationCanvasProps> = ({
     return { rawNodes, links };
   }, [characters, focusedChar, activeFilters]);
 
-  // Cluster Data for Show All
+  // Cluster Data for Show All (Single Massive Grid)
   const clusterData = useMemo(() => {
     if (initialMode !== 'showAll') return { nodes: [] };
     const visibleChars = characters.filter((c) => activeFilters[c.progress.mastery]);
     
-    // Group by HSK Level (1 to 6+)
-    const clusters: Record<string, CharacterWithProgress[]> = {};
-    visibleChars.forEach(c => {
-      const hsk = c.hskLevel || '1';
-      const key = hsk.includes('-') ? '7' : hsk; // Group 7-9 as 7
-      if (!clusters[key]) clusters[key] = [];
-      clusters[key].push(c);
-    });
-
-    // 2D Cluster Layout
-    // Arrange clusters in a circle
-    const clusterKeys = Object.keys(clusters).sort();
     const clusterNodes: any[] = [];
+    const NODE_SPACING = 45;
+    const cols = Math.ceil(Math.sqrt(visibleChars.length));
     
-    // Layout parameters
-    const CLUSTER_RADIUS = 350;
-    const NODE_SPACING = 35;
-
-    clusterKeys.forEach((key, i) => {
-      const angle = (i / clusterKeys.length) * 2 * Math.PI - Math.PI / 2;
-      const cx = CLUSTER_RADIUS * Math.cos(angle);
-      const cy = CLUSTER_RADIUS * Math.sin(angle);
+    visibleChars.forEach((c, idx) => {
+      const row = Math.floor(idx / cols);
+      const col = idx % cols;
+      const xOffset = (col - (cols - 1) / 2) * NODE_SPACING;
+      const yOffset = (row - (cols - 1) / 2) * NODE_SPACING;
       
-      const chars = clusters[key];
-      // Arrange chars in a grid within cluster
-      const cols = Math.ceil(Math.sqrt(chars.length));
-      
-      chars.forEach((c, idx) => {
-        const row = Math.floor(idx / cols);
-        const col = idx % cols;
-        const xOffset = (col - cols/2) * NODE_SPACING;
-        const yOffset = (row - cols/2) * NODE_SPACING;
-        
-        clusterNodes.push({
-          char: c,
-          x: cx + xOffset,
-          y: cy + yOffset,
-          hsk: key
-        });
+      clusterNodes.push({
+        char: c,
+        x: xOffset,
+        y: yOffset,
+        hsk: c.hskLevel || '1'
       });
     });
 

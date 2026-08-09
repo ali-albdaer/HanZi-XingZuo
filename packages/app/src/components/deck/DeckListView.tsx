@@ -4,6 +4,7 @@ import { sortCharacters } from '../../db/queries';
 import { searchAndRankCharacters } from '../../core/search';
 import { CharacterCard } from './CharacterCard';
 import { useDeckStore } from '../../stores/deckStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import type { SortOption, MasteryLevel } from '../../config/app.config';
 import { Search, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
 import { HskBadge } from '../shared/HskBadge';
@@ -17,6 +18,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   alphabetical: 'Pinyin (A-Z)',
   mastery: 'Mastery Level',
   radical: 'Shared Radical',
+  random: 'Random',
 };
 
 function getMasteryCellStyle(level: MasteryLevel) {
@@ -55,6 +57,9 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const searchQuery = useDeckStore((s) => s.searchQuery);
   const setSearchQuery = useDeckStore((s) => s.setSearchQuery);
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
+  
+  const listDisplayOptions = useSettingsStore((s) => s.listDisplayOptions);
+  const setListDisplayOptions = useSettingsStore((s) => s.setListDisplayOptions);
 
   const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
 
@@ -163,7 +168,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
             <span>Sort:</span>
           </div>
 
-          {(['frequency', 'alphabetical', 'mastery', 'radical'] as SortOption[]).map((opt) => (
+          {(['frequency', 'alphabetical', 'mastery', 'radical', 'random'] as SortOption[]).map((opt) => (
             <button
               key={opt}
               onClick={() => setSortOption(opt)}
@@ -184,6 +189,34 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
             </button>
           ))}
         </div>
+
+        {/* Display Options Checkboxes (Visible in both layouts) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4, paddingBottom: 2 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={listDisplayOptions.showPinyin} 
+                onChange={(e) => setListDisplayOptions({ showPinyin: e.target.checked })} 
+              />
+              Pinyin
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={listDisplayOptions.showRank} 
+                onChange={(e) => setListDisplayOptions({ showRank: e.target.checked })} 
+              />
+              Rank
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={listDisplayOptions.showHsk} 
+                onChange={(e) => setListDisplayOptions({ showHsk: e.target.checked })} 
+              />
+              HSK
+            </label>
+          </div>
       </div>
 
       {/* Result Count bar */}
@@ -235,9 +268,11 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                     <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
                       {item.id}
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-cyan)', marginTop: 2 }}>
-                      {item.pinyin[0]}
-                    </div>
+                    {listDisplayOptions.showPinyin && (
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                        {item.pinyin[0]}
+                      </div>
+                    )}
                   </div>
 
                   {/* Clean Footer Row: Same font size (#Rank & HSK badge), Zero overflow */}
@@ -250,12 +285,16 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                       width: '100%',
                     }}
                   >
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      #{item.frequency}
-                    </span>
-                    <div style={{ opacity: 0.75, display: 'flex' }}>
-                      <HskBadge level={item.hskLevel || '1'} size="sm" />
-                    </div>
+                    {listDisplayOptions.showRank && (
+                      <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        #{item.frequency}
+                      </span>
+                    )}
+                    {listDisplayOptions.showHsk && (
+                      <div style={{ opacity: 0.75, display: 'flex' }}>
+                        <HskBadge level={item.hskLevel || '1'} size="sm" />
+                      </div>
+                    )}
                   </div>
                 </div>
               );

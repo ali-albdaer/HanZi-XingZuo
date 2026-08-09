@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { useDeckStore } from '../../stores/deckStore';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
 import { CopyButton } from '../shared/CopyButton';
-import { X, Play, Hash, GitFork } from 'lucide-react';
+import { X, Play, Hash, GitFork, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { getDeckCharacters, sortCharacters } from '../../db/queries';
+import { searchAndRankCharacters } from '../../core/search';
 
 import { generatePracticeQueue } from '../../core/queue';
 import { usePracticeStore } from '../../stores/practiceStore';
@@ -13,14 +16,16 @@ export const CharacterDetailModal: React.FC = () => {
   const navigate = useNavigate();
   const selectedCharacter = useDeckStore((s) => s.selectedCharacter);
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
+  const sortOption = useDeckStore((s) => s.sortOption);
+  const searchQuery = useDeckStore((s) => s.searchQuery);
 
-  if (!selectedCharacter) return null;
-
-  const copyText =
-    `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
-    selectedCharacter.sentences.map((s) => `• ${s.chinese} (${s.english})`).join('\n');
+  const copyText = selectedCharacter
+    ? `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
+      selectedCharacter.sentences.map((s) => `• ${s.chinese} (${s.english})`).join('\n')
+    : '';
 
   const handlePracticeNow = async () => {
+    if (!selectedCharacter) return;
     const charId = selectedCharacter.id;
     const deckId = selectedCharacter.deckId;
     setSelectedCharacter(null);
@@ -28,6 +33,52 @@ export const CharacterDetailModal: React.FC = () => {
     usePracticeStore.getState().startSession(queue);
     navigate('/practice');
   };
+
+  const rawCharacters = useLiveQuery(
+    () => selectedCharacter ? getDeckCharacters(selectedCharacter.deckId) : Promise.resolve([]),
+    [selectedCharacter?.deckId]
+  );
+
+  const characters = useMemo(() => {
+    if (!rawCharacters) return [];
+    return searchQuery.trim()
+      ? searchAndRankCharacters(rawCharacters, searchQuery)
+      : sortCharacters(rawCharacters, sortOption);
+  }, [rawCharacters, searchQuery, sortOption]);
+
+  const currentIndex = selectedCharacter ? characters.findIndex(c => c.id === selectedCharacter.id) : -1;
+
+  const handleNext = useCallback(() => {
+    if (currentIndex >= 0 && currentIndex < characters.length - 1) {
+      setSelectedCharacter(characters[currentIndex + 1]);
+    }
+  }, [currentIndex, characters, setSelectedCharacter]);
+
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0) {
+      setSelectedCharacter(characters[currentIndex - 1]);
+    }
+  }, [currentIndex, characters, setSelectedCharacter]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input (e.g. search bar behind modal)
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+      
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        handleNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        handlePrev();
+      }
+    };
+    
+    if (selectedCharacter) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [handleNext, handlePrev, selectedCharacter]);
+
+  if (!selectedCharacter) return null;
 
   return (
     <div
@@ -62,6 +113,59 @@ export const CharacterDetailModal: React.FC = () => {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Navigation Buttons (Left/Right) floating outside */}
+        {currentIndex > 0 && (
+          <button
+            onClick={handlePrev}
+            style={{
+              position: 'absolute',
+              left: 'calc(50% - 260px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <ChevronLeft size={24} />
+          </button>
+        )}
+
+        {currentIndex >= 0 && currentIndex < characters.length - 1 && (
+          <button
+            onClick={handleNext}
+            style={{
+              position: 'absolute',
+              right: 'calc(50% - 260px)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <ChevronRight size={24} />
+          </button>
+        )}
+
         {/* Header bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <MasteryBadge level={selectedCharacter.progress.mastery} />

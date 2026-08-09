@@ -355,7 +355,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
         </div>
 
       {/* Action Footer Button */}
-      <div>
+      <div style={{ height: 48, flexShrink: 0, marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         {!submitted ? (
           <button
             onClick={handleSubmit}

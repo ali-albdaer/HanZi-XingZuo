@@ -62,6 +62,9 @@ const MASTERY_RANK: Record<MasteryLevel, number> = {
 };
 
 export function sortCharacters(list: CharacterWithProgress[], sort: SortOption): CharacterWithProgress[] {
+  if (sort === 'random') {
+    return list.slice().sort(() => Math.random() - 0.5);
+  }
   return list.slice().sort((a, b) => {
     if (sort === 'frequency') {
       return a.frequency - b.frequency;

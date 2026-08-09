@@ -36,7 +36,7 @@ export const APP_CONFIG = {
   },
 } as const;
 
-export type SortOption = 'frequency' | 'alphabetical' | 'mastery' | 'radical';
+export type SortOption = 'frequency' | 'alphabetical' | 'mastery' | 'radical' | 'random';
 export type MasteryLevel = 'grey' | 'bronze' | 'silver' | 'gold';
 
 export const MASTERY_COLORS: Record<MasteryLevel, string> = {

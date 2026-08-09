@@ -330,7 +330,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
       </div>
 
       {/* Dedicated Fixed Action Slot for Next Button (Always Reserved, Zero Layout Shifts) */}
-      <div style={{ height: 44, flexShrink: 0, marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ height: 48, flexShrink: 0, marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {submitted ? (
           <button
             onClick={handleNext}

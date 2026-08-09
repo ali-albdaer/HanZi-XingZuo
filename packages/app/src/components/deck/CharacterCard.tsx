@@ -3,6 +3,7 @@ import type { CharacterWithProgress } from '../../db/queries';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
 import { useDeckStore } from '../../stores/deckStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { MASTERY_COLORS } from '../../config/app.config';
 
 interface CharacterCardProps {
@@ -11,6 +12,7 @@ interface CharacterCardProps {
 
 export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
+  const listDisplayOptions = useSettingsStore((s) => s.listDisplayOptions);
 
   return (
     <div
@@ -52,12 +54,16 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
         {/* Info */}
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--accent-cyan)' }}>
-              {item.pinyin.join(', ')}
-            </span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              #{item.frequency}
-            </span>
+            {listDisplayOptions.showPinyin && (
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--accent-cyan)' }}>
+                {item.pinyin.join(', ')}
+              </span>
+            )}
+            {listDisplayOptions.showRank && (
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                #{item.frequency}
+              </span>
+            )}
           </div>
 
           <div
@@ -77,7 +83,9 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ item }) => {
 
       {/* Badges on Right */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, opacity: 0.85 }}>
-        <HskBadge level={item.hskLevel || '1'} size="sm" />
+        {listDisplayOptions.showHsk && (
+          <HskBadge level={item.hskLevel || '1'} size="sm" />
+        )}
         <MasteryBadge level={item.progress.mastery} showLabel={false} />
       </div>
     </div>
