@@ -350,7 +350,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
               cursor: 'pointer',
             }}
           >
-            <span>Next (Enter)</span>
+            <span>Next [Enter]</span>
             <ArrowRight size={16} />
           </button>
         ) : preferredClozeMode === 'keyboard' ? (
@@ -369,7 +369,7 @@ export const ClozeExercise: React.FC<ClozeExerciseProps> = ({ exercise, onComple
               cursor: !keyboardInput.trim() ? 'default' : 'pointer',
             }}
           >
-            Submit (Enter)
+            Submit [Enter]
           </button>
         ) : null}
       </div>

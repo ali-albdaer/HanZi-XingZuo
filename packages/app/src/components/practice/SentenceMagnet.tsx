@@ -373,7 +373,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
               transition: 'background 0.2s ease',
             }}
           >
-            Check Answer (Enter)
+            Check Answer [Enter]
           </button>
         ) : (
           <button
@@ -394,7 +394,7 @@ export const SentenceMagnet: React.FC<SentenceMagnetProps> = ({ exercise, onComp
               cursor: 'pointer',
             }}
           >
-            <span>Next (Enter)</span>
+            <span>Next [Enter]</span>
             <ArrowRight size={16} />
           </button>
         )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useRef } from 'react';
 import { useDeckStore } from '../../stores/deckStore';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
@@ -12,6 +12,7 @@ import { searchAndRankCharacters } from '../../core/search';
 
 import { generatePracticeQueue } from '../../core/queue';
 import { usePracticeStore } from '../../stores/practiceStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 export const CharacterDetailModal: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export const CharacterDetailModal: React.FC = () => {
   const sortOption = useDeckStore((s) => s.sortOption);
   const randomSeed = useDeckStore((s) => s.randomSeed);
   const searchQuery = useDeckStore((s) => s.searchQuery);
+  const showKnownCharacters = useSettingsStore((s) => s.listDisplayOptions.showKnownCharacters);
 
   const copyText = selectedCharacter
     ? `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
@@ -41,12 +43,22 @@ export const CharacterDetailModal: React.FC = () => {
     [selectedCharacter?.deckId]
   );
 
+  // Track characters that become known during this modal session
+  const newlyKnownIds = useRef<Set<string>>(new Set());
+
   const characters = useMemo(() => {
     if (!rawCharacters) return [];
+    
+    // Filter known characters if setting is disabled
+    // But preserve characters that became known while the modal was open
+    const filtered = rawCharacters.filter((c) => 
+      showKnownCharacters || !c.progress.isKnown || newlyKnownIds.current.has(c.id)
+    );
+
     return searchQuery.trim()
-      ? searchAndRankCharacters(rawCharacters, searchQuery)
-      : sortCharacters(rawCharacters, sortOption, randomSeed);
-  }, [rawCharacters, searchQuery, sortOption, randomSeed]);
+      ? searchAndRankCharacters(filtered, searchQuery)
+      : sortCharacters(filtered, sortOption, randomSeed);
+  }, [rawCharacters, searchQuery, sortOption, randomSeed, showKnownCharacters]);
 
   const currentIndex = selectedCharacter ? characters.findIndex(c => c.id === selectedCharacter.id) : -1;
 
@@ -65,11 +77,19 @@ export const CharacterDetailModal: React.FC = () => {
   const handleToggleKnown = useCallback(async () => {
     if (!selectedCharacter) return;
     const current = selectedCharacter.progress.isKnown || false;
-    await db.userProgress.update(selectedCharacter.id, { isKnown: !current });
+    const newKnown = !current;
+    
+    if (newKnown) {
+      newlyKnownIds.current.add(selectedCharacter.id);
+    } else {
+      newlyKnownIds.current.delete(selectedCharacter.id);
+    }
+
+    await db.userProgress.update(selectedCharacter.id, { isKnown: newKnown });
     // Update local state to reflect change immediately without closing modal
     setSelectedCharacter({
       ...selectedCharacter,
-      progress: { ...selectedCharacter.progress, isKnown: !current }
+      progress: { ...selectedCharacter.progress, isKnown: newKnown }
     });
   }, [selectedCharacter, setSelectedCharacter]);
 
@@ -84,14 +104,26 @@ export const CharacterDetailModal: React.FC = () => {
         handlePrev();
       } else if (e.key === 'k' || e.key === 'K') {
         handleToggleKnown();
+      } else if (e.key === 'Escape') {
+        setSelectedCharacter(null);
+      } else if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault(); // Prevent background scroll when pressing space
       }
     };
     
     if (selectedCharacter) {
       window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        // Clear newly known IDs when modal closes so they disappear from list next time
+        if (!useDeckStore.getState().selectedCharacter) {
+          newlyKnownIds.current.clear();
+        }
+      };
+    } else {
+      newlyKnownIds.current.clear();
     }
-  }, [handleNext, handlePrev, handleToggleKnown, selectedCharacter]);
+  }, [handleNext, handlePrev, handleToggleKnown, selectedCharacter, setSelectedCharacter]);
 
   if (!selectedCharacter) return null;
 
@@ -150,6 +182,7 @@ export const CharacterDetailModal: React.FC = () => {
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
               backdropFilter: 'blur(4px)',
             }}
+            title="Previous [Left Arrow] or [A]"
           >
             <ChevronLeft size={24} />
           </button>
@@ -176,6 +209,7 @@ export const CharacterDetailModal: React.FC = () => {
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
               backdropFilter: 'blur(4px)',
             }}
+            title="Next [Right Arrow] or [D]"
           >
             <ChevronRight size={24} />
           </button>
@@ -193,6 +227,7 @@ export const CharacterDetailModal: React.FC = () => {
               color: 'var(--text-secondary)',
               cursor: 'pointer',
             }}
+            title="Close [Esc]"
           >
             <X size={18} />
           </button>
@@ -318,9 +353,10 @@ export const CharacterDetailModal: React.FC = () => {
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
+            title="Toggle Known [K]"
           >
             <CheckCircle2 size={16} />
-            <span>{selectedCharacter.progress.isKnown ? 'Known' : 'Mark Known'}</span>
+            <span>{selectedCharacter.progress.isKnown ? 'Known [K]' : 'Mark Known [K]'}</span>
           </button>
 
           <CopyButton textToCopy={copyText} label="Copy" className="flex-1" />
