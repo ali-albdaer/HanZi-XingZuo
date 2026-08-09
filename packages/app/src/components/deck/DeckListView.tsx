@@ -84,7 +84,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
           {/* Search */}
           <div
             style={{
-              flex: 1,
+              flex: '0 1 120px',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
@@ -101,7 +101,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
-                flex: 1,
+                width: '100%',
                 background: 'none',
                 border: 'none',
                 outline: 'none',
@@ -201,22 +201,22 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
           <button
             onClick={() => setShowFilters((v) => !v)}
             title="Display options"
+            className={`btn btn-secondary ${showFilters ? 'active' : ''}`}
             style={{
-              width: 36,
-              height: 36,
+              padding: '7px 10px',
               borderRadius: 10,
-              backgroundColor: showFilters ? 'var(--accent-cyan)' : 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-              color: showFilters ? '#000' : 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 6,
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'all 0.15s ease',
+              fontSize: 12,
+              fontWeight: 600,
             }}
           >
             <SlidersHorizontal size={14} />
+            <span>Filter</span>
           </button>
         </div>
 
