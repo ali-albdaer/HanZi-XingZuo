@@ -14,9 +14,28 @@ export async function ensureDatabaseSeeded(): Promise<void> {
       await db.characters.clear();
       await db.sentences.clear();
     });
-    const response = await fetch(`${import.meta.env.BASE_URL}seed-data.json`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch seed data: ${response.statusText}`);
+    const seedUrls = [
+      `${import.meta.env.BASE_URL}seed-data.json`,
+      './seed-data.json',
+      'seed-data.json',
+      '/seed-data.json',
+    ];
+
+    let response: Response | null = null;
+    for (const url of seedUrls) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          response = res;
+          break;
+        }
+      } catch (err) {
+        // try next
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`Failed to fetch seed data from any path`);
     }
 
     const data = await response.json();
