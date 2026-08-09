@@ -7,6 +7,7 @@ interface DeckState {
   viewMode: 'list' | 'orbit' | 'showAll';
   sortOption: SortOption;
   searchQuery: string;
+  randomSeed: number;
   selectedCharacter: CharacterWithProgress | null;
   masteryFilter: Record<'grey' | 'bronze' | 'silver' | 'gold', boolean>;
   showAllConstellation: boolean;
@@ -25,6 +26,7 @@ export const useDeckStore = create<DeckState>((set) => ({
   viewMode: 'list',
   sortOption: 'frequency',
   searchQuery: '',
+  randomSeed: Date.now(),
   selectedCharacter: null,
   masteryFilter: {
     grey: true,
@@ -36,7 +38,10 @@ export const useDeckStore = create<DeckState>((set) => ({
 
   setActiveDeckId: (id) => set({ activeDeckId: id }),
   setViewMode: (mode) => set({ viewMode: mode }),
-  setSortOption: (sort) => set({ sortOption: sort }),
+  setSortOption: (sort) => set((state) => ({
+    sortOption: sort,
+    randomSeed: sort === 'random' ? Date.now() : state.randomSeed
+  })),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedCharacter: (char) => set({ selectedCharacter: char }),
   toggleMasteryFilter: (level) =>

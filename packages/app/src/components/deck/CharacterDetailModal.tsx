@@ -3,8 +3,9 @@ import { useDeckStore } from '../../stores/deckStore';
 import { MasteryBadge } from '../shared/MasteryBadge';
 import { HskBadge } from '../shared/HskBadge';
 import { CopyButton } from '../shared/CopyButton';
-import { X, Play, Hash, GitFork, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Play, Hash, GitFork, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../../db/schema';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getDeckCharacters, sortCharacters } from '../../db/queries';
 import { searchAndRankCharacters } from '../../core/search';
@@ -17,6 +18,7 @@ export const CharacterDetailModal: React.FC = () => {
   const selectedCharacter = useDeckStore((s) => s.selectedCharacter);
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
   const sortOption = useDeckStore((s) => s.sortOption);
+  const randomSeed = useDeckStore((s) => s.randomSeed);
   const searchQuery = useDeckStore((s) => s.searchQuery);
 
   const copyText = selectedCharacter
@@ -43,8 +45,8 @@ export const CharacterDetailModal: React.FC = () => {
     if (!rawCharacters) return [];
     return searchQuery.trim()
       ? searchAndRankCharacters(rawCharacters, searchQuery)
-      : sortCharacters(rawCharacters, sortOption);
-  }, [rawCharacters, searchQuery, sortOption]);
+      : sortCharacters(rawCharacters, sortOption, randomSeed);
+  }, [rawCharacters, searchQuery, sortOption, randomSeed]);
 
   const currentIndex = selectedCharacter ? characters.findIndex(c => c.id === selectedCharacter.id) : -1;
 
@@ -60,6 +62,17 @@ export const CharacterDetailModal: React.FC = () => {
     }
   }, [currentIndex, characters, setSelectedCharacter]);
 
+  const handleToggleKnown = useCallback(async () => {
+    if (!selectedCharacter) return;
+    const current = selectedCharacter.progress.isKnown || false;
+    await db.userProgress.update(selectedCharacter.id, { isKnown: !current });
+    // Update local state to reflect change immediately without closing modal
+    setSelectedCharacter({
+      ...selectedCharacter,
+      progress: { ...selectedCharacter.progress, isKnown: !current }
+    });
+  }, [selectedCharacter, setSelectedCharacter]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input (e.g. search bar behind modal)
@@ -69,6 +82,8 @@ export const CharacterDetailModal: React.FC = () => {
         handleNext();
       } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         handlePrev();
+      } else if (e.key === 'k' || e.key === 'K') {
+        handleToggleKnown();
       }
     };
     
@@ -76,7 +91,7 @@ export const CharacterDetailModal: React.FC = () => {
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [handleNext, handlePrev, selectedCharacter]);
+  }, [handleNext, handlePrev, handleToggleKnown, selectedCharacter]);
 
   if (!selectedCharacter) return null;
 
@@ -285,7 +300,30 @@ export const CharacterDetailModal: React.FC = () => {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-          <CopyButton textToCopy={copyText} label="Copy Content" className="flex-1" />
+          <button
+            onClick={handleToggleKnown}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              borderRadius: 10,
+              background: selectedCharacter.progress.isKnown ? 'var(--accent-cyan)' : 'var(--bg-card)',
+              border: `1px solid ${selectedCharacter.progress.isKnown ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+              color: selectedCharacter.progress.isKnown ? '#000' : 'var(--text-primary)',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <CheckCircle2 size={16} />
+            <span>{selectedCharacter.progress.isKnown ? 'Known' : 'Mark Known'}</span>
+          </button>
+
+          <CopyButton textToCopy={copyText} label="Copy" className="flex-1" />
 
           <button
             onClick={handlePracticeNow}

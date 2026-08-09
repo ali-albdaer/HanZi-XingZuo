@@ -46,6 +46,7 @@ export async function getDeckCharacters(
       correctStreak: 0,
       totalReviews: 0,
       keyboardCleared: false,
+      isKnown: false,
     },
     sentences: sentenceMap.get(c.id) || [],
   }));
@@ -61,9 +62,23 @@ const MASTERY_RANK: Record<MasteryLevel, number> = {
   gold: 3,
 };
 
-export function sortCharacters(list: CharacterWithProgress[], sort: SortOption): CharacterWithProgress[] {
+// Simple seeded PRNG (mulberry32)
+function seededRandom(seed: number) {
+  return function() {
+    var t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+export function sortCharacters(list: CharacterWithProgress[], sort: SortOption, randomSeed: number = 0): CharacterWithProgress[] {
   if (sort === 'random') {
-    return list.slice().sort(() => Math.random() - 0.5);
+    const random = seededRandom(randomSeed);
+    return list
+      .map(c => ({ c, weight: random() }))
+      .sort((a, b) => a.weight - b.weight)
+      .map(item => item.c);
   }
   return list.slice().sort((a, b) => {
     if (sort === 'frequency') {
@@ -118,6 +133,7 @@ export async function addCharacterToVault(
       correctStreak: 0,
       totalReviews: 0,
       keyboardCleared: false,
+      isKnown: false,
     });
   }
 
@@ -161,6 +177,7 @@ export async function createCustomDeckFromText(
       correctStreak: 0,
       totalReviews: 0,
       keyboardCleared: false,
+      isKnown: false,
     }));
 
     await db.userProgress.bulkPut(progressList);

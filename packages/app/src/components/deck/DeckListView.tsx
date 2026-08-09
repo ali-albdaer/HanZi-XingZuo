@@ -54,6 +54,7 @@ function getMasteryCellStyle(level: MasteryLevel) {
 export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const sortOption = useDeckStore((s) => s.sortOption);
   const setSortOption = useDeckStore((s) => s.setSortOption);
+  const randomSeed = useDeckStore((s) => s.randomSeed);
   const searchQuery = useDeckStore((s) => s.searchQuery);
   const setSearchQuery = useDeckStore((s) => s.setSearchQuery);
   const setSelectedCharacter = useDeckStore((s) => s.setSelectedCharacter);
@@ -63,10 +64,13 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
 
   const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
 
+  // Filter by Known status
+  const filteredByKnown = characters.filter((c) => listDisplayOptions.showKnownCharacters || !c.progress.isKnown);
+
   // Apply tiered search ranking if search query is present, otherwise standard sort
   const sortedAndFiltered = searchQuery.trim()
-    ? searchAndRankCharacters(characters, searchQuery)
-    : sortCharacters(characters, sortOption);
+    ? searchAndRankCharacters(filteredByKnown, searchQuery)
+    : sortCharacters(filteredByKnown, sortOption, randomSeed);
 
   return (
     <div
@@ -191,7 +195,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
         </div>
 
         {/* Display Options Checkboxes (Visible in both layouts) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4, paddingBottom: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingTop: 4, paddingBottom: 2, flexWrap: 'wrap' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
               <input 
                 type="checkbox" 
@@ -215,6 +219,15 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                 onChange={(e) => setListDisplayOptions({ showHsk: e.target.checked })} 
               />
               HSK
+            </label>
+            <div style={{ width: 1, height: 12, background: 'var(--border-color)', margin: '0 4px' }} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={listDisplayOptions.showKnownCharacters} 
+                onChange={(e) => setListDisplayOptions({ showKnownCharacters: e.target.checked })} 
+              />
+              Show Known
             </label>
           </div>
       </div>

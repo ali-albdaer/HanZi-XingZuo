@@ -51,6 +51,10 @@ export async function generatePracticeQueue(
   const unseenProgression: typeof allChars = [];
 
   for (const item of allChars) {
+    if (item.progress.isKnown) {
+      continue; // Skip known/ignored characters
+    }
+    
     if (item.progress.mastery === 'grey') {
       unseenProgression.push(item);
     } else {

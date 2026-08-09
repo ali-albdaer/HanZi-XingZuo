@@ -14,6 +14,7 @@ export interface ListDisplayOptions {
   showPinyin: boolean;
   showRank: boolean;
   showHsk: boolean;
+  showKnownCharacters: boolean;
 }
 
 interface SettingsState {
@@ -51,6 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
         showPinyin: true,
         showRank: true,
         showHsk: true,
+        showKnownCharacters: false,
       },
 
       setInputMode: (mode) => set({ inputMode: mode }),

@@ -38,6 +38,7 @@ export interface UserProgressEntity {
   correctStreak: number;
   totalReviews: number;
   keyboardCleared: boolean;
+  isKnown?: boolean;
 }
 
 export class HanZiDatabase extends Dexie {
