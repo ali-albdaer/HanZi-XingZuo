@@ -301,65 +301,59 @@ export const CharacterDetailModal: React.FC = () => {
 
         {/* Example Sentences */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
-          {selectedCharacter.sentences.map((sentence, idx) => {
-            const isExpanded = expandedSentenceId === (sentence.id || String(idx));
-            return (
-              <div
-                key={sentence.id || idx}
-                onClick={() => setExpandedSentenceId(isExpanded ? null : (sentence.id || String(idx)))}
-                style={{
-                  backgroundColor: isExpanded ? 'var(--bg-secondary)' : 'var(--bg-card)',
-                  border: isExpanded ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-                  borderRadius: 12,
-                  padding: isExpanded ? '14px 18px' : '10px 14px',
-                  minWidth: 0,
-                  cursor: 'pointer',
-                  textAlign: isExpanded ? 'center' : 'left',
-                  transition: 'all 0.2s ease',
-                  boxShadow: isExpanded ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
-                  transform: isExpanded ? 'scale(1.02)' : 'scale(1)',
-                  zIndex: isExpanded ? 10 : 1,
-                  position: 'relative',
-                }}
-              >
-                <div style={{ 
-                  fontSize: isExpanded ? 32 : 28, 
-                  fontWeight: 600, 
-                  color: 'var(--text-primary)', 
-                  lineHeight: 1.3,
-                  whiteSpace: isExpanded ? 'normal' : 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: isExpanded ? 'clip' : 'ellipsis'
-                }}>
-                  {sentence.chinese}
-                </div>
-                {sentence.pinyin && (
-                  <div style={{ 
-                    fontSize: isExpanded ? 18 : 16, 
-                    fontWeight: 500, 
-                    color: 'var(--accent-cyan)', 
-                    marginTop: 4,
-                    whiteSpace: isExpanded ? 'normal' : 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: isExpanded ? 'clip' : 'ellipsis'
-                  }}>
-                    {sentence.pinyin}
-                  </div>
-                )}
-                <div style={{ 
-                  fontSize: isExpanded ? 18 : 16, 
-                  color: 'var(--text-secondary)', 
-                  marginTop: isExpanded ? 8 : 4, 
-                  lineHeight: 1.4,
-                  whiteSpace: isExpanded ? 'normal' : 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: isExpanded ? 'clip' : 'ellipsis'
-                }}>
-                  {sentence.english}
-                </div>
+          {selectedCharacter.sentences.map((sentence, idx) => (
+            <div
+              key={sentence.id || idx}
+              onClick={() => setExpandedSentenceId(sentence.id || String(idx))}
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 12,
+                padding: '10px 14px',
+                minWidth: 0,
+                cursor: 'pointer',
+                transition: 'background-color 0.2s, transform 0.1s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card)')}
+            >
+              <div style={{ 
+                fontSize: 28, 
+                fontWeight: 600, 
+                color: 'var(--text-primary)', 
+                lineHeight: 1.3,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {sentence.chinese}
               </div>
-            );
-          })}
+              {sentence.pinyin && (
+                <div style={{ 
+                  fontSize: 16, 
+                  fontWeight: 500, 
+                  color: 'var(--accent-cyan)', 
+                  marginTop: 4,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {sentence.pinyin}
+                </div>
+              )}
+              <div style={{ 
+                fontSize: 16, 
+                color: 'var(--text-secondary)', 
+                marginTop: 4, 
+                lineHeight: 1.4,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {sentence.english}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Action Buttons */}
@@ -386,6 +380,64 @@ export const CharacterDetailModal: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Pop-up for expanded sentence */}
+      {expandedSentenceId && (() => {
+        const sentence = selectedCharacter.sentences.find((s, i) => (s.id || String(i)) === expandedSentenceId);
+        if (!sentence) return null;
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.75)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '24px',
+              animation: 'sentenceFadeIn 0.2s ease-out forwards',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpandedSentenceId(null);
+            }}
+          >
+            <style>{`
+              @keyframes sentenceFadeIn { from { opacity: 0; } to { opacity: 1; } }
+              @keyframes sentenceScaleUp { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+            `}</style>
+            <div
+              style={{
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--accent-cyan)',
+                borderRadius: 24,
+                padding: '40px 48px',
+                maxWidth: 960,
+                width: '100%',
+                textAlign: 'center',
+                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6)',
+                animation: 'sentenceScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ fontSize: 56, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                {sentence.chinese}
+              </div>
+              {sentence.pinyin && (
+                <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--accent-cyan)', marginTop: 16 }}>
+                  {sentence.pinyin}
+                </div>
+              )}
+              <div style={{ fontSize: 24, color: 'var(--text-secondary)', marginTop: 16, lineHeight: 1.5 }}>
+                {sentence.english}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
