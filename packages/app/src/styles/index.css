@@ -94,7 +94,7 @@ button {
 .main-content {
   flex: 1;
   width: 100%;
-  height: calc(100dvh - var(--tab-bar-height));
+  height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
 }

@@ -47,7 +47,14 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
     set((state) => {
       const nextAnswers = new Map(state.userAnswers);
       nextAnswers.set(index, isCorrect);
-      return { userAnswers: nextAnswers };
+      
+      let nextQueue = state.queue;
+      // If wrong, push to end of queue to repeat later
+      if (!isCorrect) {
+        nextQueue = [...state.queue, state.queue[index]];
+      }
+
+      return { userAnswers: nextAnswers, queue: nextQueue };
     }),
 
   nextExercise: () => {

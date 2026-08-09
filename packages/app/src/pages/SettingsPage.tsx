@@ -19,7 +19,7 @@ export const SettingsPage: React.FC = () => {
   const setDecayHours = useSettingsStore((s) => s.setDecayHours);
 
   return (
-    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
+    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 24 }}>
       <div style={{ marginTop: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { BottomTabBar } from './BottomTabBar';
 import { ensureDatabaseSeeded } from '../../db/seed';
 import { Loader2 } from 'lucide-react';
 
@@ -29,10 +28,9 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="app-viewport">
-      <main className={`main-content ${isPracticePage ? 'no-scroll' : ''}`}>
+      <main className={`main-content ${isPracticePage ? 'no-scroll' : ''}`} style={{ height: '100dvh' }}>
         <Outlet />
       </main>
-      <BottomTabBar />
     </div>
   );
 };

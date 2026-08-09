@@ -3,13 +3,14 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getAllDecks, getDeckCharacters, deleteCustomDeck } from '../db/queries';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../stores/deckStore';
-import { BookOpen, Vault, Sparkles, ChevronRight, Plus, Trash2, FileText, Settings } from 'lucide-react';
+import { BookOpen, Vault, Sparkles, ChevronRight, Plus, Trash2, FileText, Settings, Play } from 'lucide-react';
 import { APP_CONFIG } from '../config/app.config';
 import { CreateDeckModal } from '../components/vault/CreateDeckModal';
 
 export const DecksPage: React.FC = () => {
   const navigate = useNavigate();
   const setActiveDeckId = useDeckStore((s) => s.setActiveDeckId);
+  const activeDeckId = useDeckStore((s) => s.activeDeckId) || 'top-1000';
 
   const allDecks = useLiveQuery(() => getAllDecks(), []);
   const top1000Chars = useLiveQuery(() => getDeckCharacters('top-1000'), []);
@@ -47,7 +48,7 @@ export const DecksPage: React.FC = () => {
   const customDecks = allDecks?.filter((d) => d.id !== 'top-1000' && d.id !== 'my-vault') || [];
 
   return (
-    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
+    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 24 }}>
       {/* App Branding Header + Create Deck Button */}
       <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -108,7 +109,8 @@ export const DecksPage: React.FC = () => {
           onClick={() => handleSelectDeck('top-1000')}
           style={{
             background: 'linear-gradient(135deg, rgba(32, 32, 50, 0.9), rgba(24, 24, 36, 0.9))',
-            border: '1px solid var(--border-color)',
+            border: activeDeckId === 'top-1000' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+            boxShadow: activeDeckId === 'top-1000' ? '0 0 16px rgba(24, 231, 236, 0.15)' : 'none',
             borderRadius: 18,
             padding: 20,
             cursor: 'pointer',
@@ -164,7 +166,8 @@ export const DecksPage: React.FC = () => {
           onClick={() => handleSelectDeck('my-vault')}
           style={{
             background: 'linear-gradient(135deg, rgba(32, 32, 50, 0.9), rgba(24, 24, 36, 0.9))',
-            border: '1px solid var(--border-color)',
+            border: activeDeckId === 'my-vault' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+            boxShadow: activeDeckId === 'my-vault' ? '0 0 16px rgba(24, 231, 236, 0.15)' : 'none',
             borderRadius: 18,
             padding: 20,
             cursor: 'pointer',
@@ -220,7 +223,8 @@ export const DecksPage: React.FC = () => {
                 onClick={() => handleSelectDeck(deck.id)}
                 style={{
                   background: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
+                  border: activeDeckId === deck.id ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+                  boxShadow: activeDeckId === deck.id ? '0 0 16px rgba(24, 231, 236, 0.15)' : 'none',
                   borderRadius: 16,
                   padding: 16,
                   cursor: 'pointer',
@@ -272,6 +276,32 @@ export const DecksPage: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Main Practice Action (Moved to Bottom) */}
+      <button
+        onClick={() => navigate('/practice')}
+        style={{
+          width: '100%',
+          padding: '16px 20px',
+          borderRadius: 18,
+          background: 'var(--accent-gradient)',
+          color: '#000',
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px rgba(24, 231, 236, 0.25)',
+          fontSize: 16,
+          fontWeight: 700,
+          marginTop: 10,
+          transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        }}
+      >
+        <Play fill="#000" size={20} />
+        <span>Practice Active Deck</span>
+      </button>
 
       {/* Create Deck Modal */}
       {showCreateModal && <CreateDeckModal onClose={() => setShowCreateModal(false)} />}
