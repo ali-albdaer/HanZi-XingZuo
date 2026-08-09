@@ -33,8 +33,12 @@ export const CharacterDetailModal: React.FC = () => {
     const charId = selectedCharacter.id;
     const deckId = selectedCharacter.deckId;
     setSelectedCharacter(null);
-    const queue = await generatePracticeQueue(deckId, { guaranteedCharacterId: charId });
-    usePracticeStore.getState().startSession(queue);
+    const queue = await generatePracticeQueue(deckId, { 
+      guaranteedCharacterId: charId,
+      singleCharacterMode: true 
+    });
+    // Start finite session for single character, returning to the deck
+    usePracticeStore.getState().startSession(queue, false, `/decks/${deckId}`);
     navigate('/practice');
   };
 

@@ -15,6 +15,8 @@ export const PracticeView: React.FC = () => {
     recordAnswer,
     nextExercise,
     resetSession,
+    isCompleted,
+    returnToPath,
   } = usePracticeStore();
 
   const currentItem = queue[currentIndex];
@@ -26,7 +28,7 @@ export const PracticeView: React.FC = () => {
 
   const handleClose = () => {
     resetSession();
-    navigate('/decks');
+    navigate(returnToPath);
   };
 
   // Live Session Stats
@@ -38,6 +40,41 @@ export const PracticeView: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
         No exercises available.
+      </div>
+    );
+  }
+
+  if (isCompleted) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          backgroundColor: 'var(--bg-main)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: 16 }}>
+          Session Complete!
+        </div>
+        <button
+          onClick={handleClose}
+          style={{
+            padding: '12px 24px',
+            borderRadius: 12,
+            background: 'var(--accent-cyan)',
+            color: '#000',
+            fontWeight: 700,
+            fontSize: 16,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Return to Deck
+        </button>
       </div>
     );
   }

@@ -8,9 +8,11 @@ interface PracticeState {
   preferredClozeMode: 'selection' | 'keyboard';
   sessionActive: boolean;
   isCompleted: boolean;
+  isInfinite: boolean;
+  returnToPath: string;
 
   // Actions
-  startSession: (queue: ExerciseItem[]) => void;
+  startSession: (queue: ExerciseItem[], isInfinite?: boolean, returnToPath?: string) => void;
   recordAnswer: (index: number, isCorrect: boolean) => void;
   nextExercise: () => void;
   setClozeMode: (mode: 'selection' | 'keyboard') => void;
@@ -27,14 +29,18 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   preferredClozeMode: SAVED_CLOZE_MODE,
   sessionActive: false,
   isCompleted: false,
+  isInfinite: true,
+  returnToPath: '/decks',
 
-  startSession: (queue) =>
+  startSession: (queue, isInfinite = true, returnToPath = '/decks') =>
     set({
       queue,
       currentIndex: 0,
       userAnswers: new Map(),
       sessionActive: true,
       isCompleted: false,
+      isInfinite,
+      returnToPath,
     }),
 
   recordAnswer: (index, isCorrect) =>
@@ -45,11 +51,16 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
     }),
 
   nextExercise: () => {
-    const { currentIndex, queue } = get();
+    const { currentIndex, queue, isInfinite } = get();
     if (currentIndex + 1 >= queue.length && queue.length > 0) {
-      // Reshuffle queue items so practice continues infinitely
-      const reshuffled = [...queue].sort(() => Math.random() - 0.5);
-      set({ queue: [...queue, ...reshuffled], currentIndex: currentIndex + 1 });
+      if (isInfinite) {
+        // Reshuffle queue items so practice continues infinitely
+        const reshuffled = [...queue].sort(() => Math.random() - 0.5);
+        set({ queue: [...queue, ...reshuffled], currentIndex: currentIndex + 1 });
+      } else {
+        // Mark session as completed
+        set({ isCompleted: true });
+      }
     } else {
       set({ currentIndex: currentIndex + 1 });
     }

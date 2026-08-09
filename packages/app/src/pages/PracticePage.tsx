@@ -3,6 +3,7 @@ import { usePracticeStore } from '../stores/practiceStore';
 import { generatePracticeQueue } from '../core/queue';
 import { PracticeView } from '../components/practice/PracticeView';
 import { getDeckCharacters } from '../db/queries';
+import { db } from '../db/schema';
 import { isMasteryDecayed } from '../core/srs';
 import { useDeckStore } from '../stores/deckStore';
 import { Play, Sparkles } from 'lucide-react';
@@ -13,9 +14,13 @@ export const PracticePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dueCount, setDueCount] = useState(0);
   const [unseenCount, setUnseenCount] = useState(0);
+  const [deckName, setDeckName] = useState('...');
 
   useEffect(() => {
     async function loadStats() {
+      const deck = await db.decks.get(activeDeckId);
+      if (deck) setDeckName(deck.name);
+      
       const all = await getDeckCharacters(activeDeckId);
       const now = Date.now();
 
@@ -88,6 +93,9 @@ export const PracticePage: React.FC = () => {
       <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
         Practice
       </h2>
+      <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8 }}>
+        Deck: <strong style={{ color: 'var(--accent-cyan)' }}>{deckName}</strong>
+      </div>
 
       {/* Queue Breakdown Stats */}
       <div

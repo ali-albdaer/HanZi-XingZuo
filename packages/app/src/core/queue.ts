@@ -20,6 +20,7 @@ export interface QueueGenerationOptions {
   sessionSize?: number;
   guaranteedCharacterId?: string;
   preferredType?: ExerciseType;
+  singleCharacterMode?: boolean;
 }
 
 /**
@@ -82,6 +83,40 @@ export async function generatePracticeQueue(
 
   // Assemble candidate list
   const selectedChars: typeof allChars = [];
+
+  // Handle single character mode specifically
+  if (options.singleCharacterMode && guaranteedItem) {
+    // Generate exercises ONLY for this character based on its sentences
+    const sents = await db.sentences.where({ characterId: guaranteedItem.id }).toArray();
+    const sentences = sents.length > 0 ? sents : [{
+      id: `fallback-${guaranteedItem.id}`,
+      characterId: guaranteedItem.id,
+      deckId: guaranteedItem.deckId,
+      chinese: `这是${guaranteedItem.id}。`,
+      pinyin: `zhè shì ${guaranteedItem.pinyin[0]}。`,
+      english: `This is '${guaranteedItem.definitions[0]}'.`,
+      chunks: ['这是', guaranteedItem.id, '。'],
+    }];
+
+    const queue: ExerciseItem[] = [];
+    for (const sent of sentences) {
+      queue.push({
+        character: guaranteedItem as CharacterEntity,
+        progress: guaranteedItem.progress,
+        sentence: sent,
+        type: 'magnet',
+        distractors: [],
+      });
+      queue.push({
+        character: guaranteedItem as CharacterEntity,
+        progress: guaranteedItem.progress,
+        sentence: sent,
+        type: 'cloze',
+        distractors: generateClozeDistractors(guaranteedItem as CharacterEntity, charEntities),
+      });
+    }
+    return queue.sort(() => Math.random() - 0.5);
+  }
 
   if (guaranteedItem) {
     selectedChars.push(guaranteedItem);
