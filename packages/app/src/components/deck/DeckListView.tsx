@@ -6,7 +6,7 @@ import { CharacterCard } from './CharacterCard';
 import { useDeckStore } from '../../stores/deckStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import type { SortOption, MasteryLevel } from '../../config/app.config';
-import { Search, LayoutGrid, List, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Search, LayoutGrid, List, SlidersHorizontal, ChevronDown, Eye } from 'lucide-react';
 import { HskBadge } from '../shared/HskBadge';
 
 interface DeckListViewProps {
@@ -19,6 +19,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   mastery: 'Mastery',
   radical: 'Radical',
   random: 'Random',
+  hsk: 'HSK Level',
 };
 
 function getMasteryAccent(level: MasteryLevel): string {
@@ -50,13 +51,25 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const listDisplayOptions = useSettingsStore((s) => s.listDisplayOptions);
   const setListDisplayOptions = useSettingsStore((s) => s.setListDisplayOptions);
 
-  const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
-  const [showFilters, setShowFilters] = useState(false);
+  const listFilterOptions = useSettingsStore((s) => s.listFilterOptions);
+  const setListFilterOptions = useSettingsStore((s) => s.setListFilterOptions);
 
-  // Filter by Known status
-  const filteredByKnown = characters.filter(
-    (c) => listDisplayOptions.showKnownCharacters || !c.progress.isKnown
-  );
+  const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
+  const [showDisplayOptions, setShowDisplayOptions] = useState(true);
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
+
+  // Filter by Known status and mastery
+  const filteredByKnown = characters.filter((c) => {
+    if (!listFilterOptions.showKnownCharacters && c.progress.isKnown) return false;
+    
+    const mastery = c.progress.mastery;
+    if (mastery === 'gold' && !listFilterOptions.showMasteryGold) return false;
+    if (mastery === 'silver' && !listFilterOptions.showMasterySilver) return false;
+    if (mastery === 'bronze' && !listFilterOptions.showMasteryBronze) return false;
+    if (mastery === 'grey' && !listFilterOptions.showMasteryGrey) return false;
+    
+    return true;
+  });
 
   // Apply sort / search
   const sortedAndFiltered = searchQuery.trim()
@@ -199,9 +212,31 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
 
           {/* Display options toggle */}
           <button
-            onClick={() => setShowFilters((v) => !v)}
+            onClick={() => setShowDisplayOptions((v) => !v)}
             title="Display options"
-            className={`btn btn-secondary ${showFilters ? 'active' : ''}`}
+            className={`btn btn-secondary ${showDisplayOptions ? 'active' : ''}`}
+            style={{
+              padding: '7px 10px',
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              cursor: 'pointer',
+              flexShrink: 0,
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            <Eye size={14} />
+            <span>Display</span>
+          </button>
+
+          {/* Filter options toggle */}
+          <button
+            onClick={() => setShowFilterOptions((v) => !v)}
+            title="Filter options"
+            className={`btn btn-secondary ${showFilterOptions ? 'active' : ''}`}
             style={{
               padding: '7px 10px',
               borderRadius: 10,
@@ -220,8 +255,8 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
           </button>
         </div>
 
-        {/* Row 2: Expandable display options */}
-        {showFilters && (
+        {/* Row 2: Expandable options */}
+        {(showDisplayOptions || showFilterOptions) && (
           <div
             style={{
               display: 'flex',
@@ -232,17 +267,46 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               flexWrap: 'wrap',
             }}
           >
-            {[
+            {showDisplayOptions && [
               { key: 'showPinyin', label: 'Pinyin' },
               { key: 'showRank',   label: 'Rank' },
               { key: 'showHsk',    label: 'HSK' },
-              { key: 'showKnownCharacters', label: 'Show Known' },
             ].map(({ key, label }) => {
               const isOn = listDisplayOptions[key as keyof typeof listDisplayOptions] as boolean;
               return (
                 <button
                   key={key}
                   onClick={() => setListDisplayOptions({ [key]: !isOn })}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: 20,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                    background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
+                    color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                    transition: 'all 0.12s ease',
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+            
+            {showFilterOptions && [
+              { key: 'showKnownCharacters', label: 'Known' },
+              { key: 'showMasteryGold', label: 'Gold' },
+              { key: 'showMasterySilver', label: 'Silver' },
+              { key: 'showMasteryBronze', label: 'Bronze' },
+              { key: 'showMasteryGrey', label: 'Grey' },
+            ].map(({ key, label }) => {
+              const isOn = listFilterOptions[key as keyof typeof listFilterOptions] as boolean;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setListFilterOptions({ [key]: !isOn })}
                   style={{
                     padding: '4px 10px',
                     borderRadius: 20,

@@ -101,6 +101,12 @@ export function sortCharacters(list: CharacterWithProgress[], sort: SortOption, 
       if (radA !== radB) return radA.localeCompare(radB);
       return a.frequency - b.frequency;
     }
+    if (sort === 'hsk') {
+      const hskA = parseInt(a.hskLevel || '9', 10);
+      const hskB = parseInt(b.hskLevel || '9', 10);
+      if (hskA !== hskB) return hskA - hskB;
+      return a.frequency - b.frequency;
+    }
     return 0;
   });
 }

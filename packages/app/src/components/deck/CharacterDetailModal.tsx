@@ -21,7 +21,7 @@ export const CharacterDetailModal: React.FC = () => {
   const sortOption = useDeckStore((s) => s.sortOption);
   const randomSeed = useDeckStore((s) => s.randomSeed);
   const searchQuery = useDeckStore((s) => s.searchQuery);
-  const showKnownCharacters = useSettingsStore((s) => s.listDisplayOptions.showKnownCharacters);
+  const showKnownCharacters = useSettingsStore((s) => s.listFilterOptions.showKnownCharacters);
 
   const copyText = selectedCharacter
     ? `${selectedCharacter.id} [${selectedCharacter.pinyin.join(', ')}]\nDefinitions: ${selectedCharacter.definitions.join('; ')}\nSentences:\n` +
@@ -149,17 +149,17 @@ export const CharacterDetailModal: React.FC = () => {
       <div
         style={{
           width: '100%',
-          maxWidth: 460,
+          maxWidth: 540,
           maxHeight: '92vh',
           backgroundColor: 'var(--bg-secondary)',
           borderRadius: 20,
           border: '1px solid var(--border-color)',
-          padding: '16px 20px',
+          padding: '24px 28px',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          gap: 10,
+          gap: 6,
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -171,7 +171,7 @@ export const CharacterDetailModal: React.FC = () => {
             className="btn btn-icon"
             style={{
               position: 'absolute',
-              left: 'calc(50% - 260px)',
+              left: 'calc(50% - 350px)',
               top: '50%',
               width: 44,
               height: 44,
@@ -190,7 +190,7 @@ export const CharacterDetailModal: React.FC = () => {
             className="btn btn-icon"
             style={{
               position: 'absolute',
-              right: 'calc(50% - 260px)',
+              right: 'calc(50% - 350px)',
               top: '50%',
               width: 44,
               height: 44,
@@ -217,10 +217,10 @@ export const CharacterDetailModal: React.FC = () => {
         </div>
 
         {/* Character Main Header */}
-        <div style={{ textAlign: 'center', margin: '2px 0' }}>
+        <div style={{ textAlign: 'center', margin: '4px 0' }}>
           <div
             style={{
-              fontSize: 52,
+              fontSize: 84,
               fontWeight: 700,
               color: 'var(--text-primary)',
               lineHeight: 1,
@@ -230,7 +230,7 @@ export const CharacterDetailModal: React.FC = () => {
           </div>
           <div
             style={{
-              fontSize: 18,
+              fontSize: 24,
               fontWeight: 600,
               color: 'var(--accent-cyan)',
               marginTop: 4,
@@ -240,9 +240,9 @@ export const CharacterDetailModal: React.FC = () => {
           </div>
           <div
             style={{
-              fontSize: 14,
+              fontSize: 16,
               color: 'var(--text-secondary)',
-              marginTop: 4,
+              marginTop: 8,
               lineHeight: 1.3,
             }}
           >
@@ -251,22 +251,22 @@ export const CharacterDetailModal: React.FC = () => {
         </div>
 
         {/* Meta info tags */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10 }}>
           <HskBadge level={selectedCharacter.hskLevel || '1'} />
 
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 4,
-              fontSize: 11,
+              gap: 2,
+              fontSize: 14,
               color: 'var(--text-muted)',
               background: 'rgba(255, 255, 255, 0.04)',
-              padding: '3px 8px',
+              padding: '4px 10px',
               borderRadius: 6,
             }}
           >
-            <Hash size={12} />
+            <Hash size={14} />
             <span>Rank #{selectedCharacter.frequency}</span>
           </div>
 
@@ -276,21 +276,21 @@ export const CharacterDetailModal: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                fontSize: 11,
+                fontSize: 14,
                 color: 'var(--text-muted)',
                 background: 'rgba(255, 255, 255, 0.04)',
-                padding: '3px 8px',
+                padding: '4px 10px',
                 borderRadius: 6,
               }}
             >
-              <GitFork size={12} />
+              <GitFork size={14} />
               <span>Radical: {selectedCharacter.radical}</span>
             </div>
           )}
         </div>
 
-        {/* Example Sentences (No label, larger text, fitting 100%) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, justifyContent: 'center' }}>
+        {/* Example Sentences */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'center' }}>
           {selectedCharacter.sentences.map((sentence, idx) => (
             <div
               key={sentence.id || idx}
@@ -301,15 +301,15 @@ export const CharacterDetailModal: React.FC = () => {
                 padding: '10px 14px',
               }}
             >
-              <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+              <div style={{ fontSize: 28, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                 {sentence.chinese}
               </div>
               {sentence.pinyin && (
-                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 2 }}>
+                <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--accent-cyan)', marginTop: 4 }}>
                   {sentence.pinyin}
                 </div>
               )}
-              <div style={{ fontSize: 13.5, color: 'var(--text-secondary)', marginTop: 3, lineHeight: 1.3 }}>
+              <div style={{ fontSize: 16, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.4 }}>
                 {sentence.english}
               </div>
             </div>

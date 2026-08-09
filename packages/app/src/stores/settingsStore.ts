@@ -14,7 +14,14 @@ export interface ListDisplayOptions {
   showPinyin: boolean;
   showRank: boolean;
   showHsk: boolean;
+}
+
+export interface ListFilterOptions {
   showKnownCharacters: boolean;
+  showMasteryGold: boolean;
+  showMasterySilver: boolean;
+  showMasteryBronze: boolean;
+  showMasteryGrey: boolean;
 }
 
 interface SettingsState {
@@ -25,6 +32,7 @@ interface SettingsState {
   reviewsPerSession: number;
   decayHours: DecayHours;
   listDisplayOptions: ListDisplayOptions;
+  listFilterOptions: ListFilterOptions;
 
   setInputMode: (mode: 'selection' | 'keyboard') => void;
   setTheme: (theme: AppTheme) => void;
@@ -33,6 +41,7 @@ interface SettingsState {
   setReviewsPerSession: (val: number) => void;
   setDecayHours: (decay: Partial<DecayHours>) => void;
   setListDisplayOptions: (opts: Partial<ListDisplayOptions>) => void;
+  setListFilterOptions: (opts: Partial<ListFilterOptions>) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -51,8 +60,14 @@ export const useSettingsStore = create<SettingsState>()(
       listDisplayOptions: {
         showPinyin: true,
         showRank: true,
-        showHsk: true,
+        showHsk: false,
+      },
+      listFilterOptions: {
         showKnownCharacters: false,
+        showMasteryGold: true,
+        showMasterySilver: true,
+        showMasteryBronze: true,
+        showMasteryGrey: true,
       },
 
       setInputMode: (mode) => set({ inputMode: mode }),
@@ -67,6 +82,8 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({ decayHours: { ...state.decayHours, ...decay } })),
       setListDisplayOptions: (opts) =>
         set((state) => ({ listDisplayOptions: { ...state.listDisplayOptions, ...opts } })),
+      setListFilterOptions: (opts) =>
+        set((state) => ({ listFilterOptions: { ...state.listFilterOptions, ...opts } })),
     }),
     {
       name: 'hanzi-settings-storage',

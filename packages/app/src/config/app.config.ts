@@ -30,13 +30,13 @@ export const APP_CONFIG = {
     cardExpandMs: 200,
   },
   deck: {
-    defaultSort: 'frequency' as const, // 'frequency' | 'alphabetical' | 'mastery' | 'radical'
+    defaultSort: 'frequency' as const, // 'frequency' | 'alphabetical' | 'mastery' | 'radical' | 'hsk'
     sentencesPerCharacter: 3,
     maxSentenceLength: 12,
   },
 } as const;
 
-export type SortOption = 'frequency' | 'alphabetical' | 'mastery' | 'radical' | 'random';
+export type SortOption = 'frequency' | 'alphabetical' | 'mastery' | 'radical' | 'random' | 'hsk';
 export type MasteryLevel = 'grey' | 'bronze' | 'silver' | 'gold';
 
 export const MASTERY_COLORS: Record<MasteryLevel, string> = {
