@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { BookOpen, Play, Settings } from 'lucide-react';
+import { BookOpen, Play } from 'lucide-react';
 
 export const BottomTabBar: React.FC = () => {
   return (
@@ -9,7 +9,7 @@ export const BottomTabBar: React.FC = () => {
         to="/decks"
         className={({ isActive }) => `tab-item ${isActive ? 'active' : ''}`}
       >
-        <BookOpen size={22} />
+        <BookOpen size={20} />
         <span>Decks</span>
       </NavLink>
 
@@ -17,16 +17,8 @@ export const BottomTabBar: React.FC = () => {
         to="/practice"
         className={({ isActive }) => `tab-item ${isActive ? 'active' : ''}`}
       >
-        <Play size={22} />
+        <Play size={20} />
         <span>Practice</span>
-      </NavLink>
-
-      <NavLink
-        to="/settings"
-        className={({ isActive }) => `tab-item ${isActive ? 'active' : ''}`}
-      >
-        <Settings size={22} />
-        <span>Settings</span>
       </NavLink>
     </nav>
   );

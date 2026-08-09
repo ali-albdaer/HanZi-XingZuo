@@ -1,8 +1,11 @@
 import React from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
-import { Settings, Keyboard, MousePointer, Info, Sun, Moon, RefreshCw } from 'lucide-react';
+import { Settings, Keyboard, MousePointer, Info, Sun, Moon, RefreshCw, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const SettingsPage: React.FC = () => {
+  const navigate = useNavigate();
+
   const inputMode = useSettingsStore((s) => s.inputMode);
   const setInputMode = useSettingsStore((s) => s.setInputMode);
 
@@ -18,9 +21,27 @@ export const SettingsPage: React.FC = () => {
   return (
     <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       <div style={{ marginTop: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Settings size={22} style={{ color: 'var(--accent-cyan)' }} />
-          <h1 style={{ fontSize: 22, fontWeight: 700 }}>Settings</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={() => navigate('/decks')}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Settings size={22} style={{ color: 'var(--accent-cyan)' }} />
+            <h1 style={{ fontSize: 22, fontWeight: 700 }}>Settings</h1>
+          </div>
         </div>
       </div>
 

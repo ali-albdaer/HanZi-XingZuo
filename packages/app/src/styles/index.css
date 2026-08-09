@@ -114,39 +114,43 @@ button {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Bottom Tab Navigation */
+/* Bottom Tab Navigation - Floating Dock Redesign */
 .bottom-tab-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--tab-bar-height);
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border-color);
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 60px;
+  background: rgba(32, 32, 50, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
   align-items: center;
   z-index: 100;
-  padding-bottom: max(0px, env(safe-area-inset-bottom));
+  padding: 0 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  margin-bottom: max(0px, env(safe-area-inset-bottom));
 }
 
 .tab-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 500;
-  transition: color 0.2s ease, transform 0.15s ease;
-  width: 33%;
-  padding: 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  padding: 10px 24px;
+  border-radius: 20px;
 }
 
 .tab-item.active {
-  color: var(--accent-cyan);
+  color: #000;
+  background: var(--accent-cyan);
 }
 
 .tab-item:active {

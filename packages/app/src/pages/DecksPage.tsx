@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getAllDecks, getDeckCharacters, deleteCustomDeck } from '../db/queries';
 import { useNavigate } from 'react-router-dom';
 import { useDeckStore } from '../stores/deckStore';
-import { BookOpen, Vault, Sparkles, ChevronRight, Plus, Trash2, FileText } from 'lucide-react';
+import { BookOpen, Vault, Sparkles, ChevronRight, Plus, Trash2, FileText, Settings } from 'lucide-react';
 import { APP_CONFIG } from '../config/app.config';
 import { CreateDeckModal } from '../components/vault/CreateDeckModal';
 
@@ -59,24 +59,46 @@ export const DecksPage: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowCreateModal(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 14px',
-            borderRadius: 12,
-            background: 'var(--accent-cyan)',
-            color: '#000',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} />
-          <span>Import Text</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => navigate('/settings')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            title="Settings"
+          >
+            <Settings size={18} />
+          </button>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 12,
+              background: 'var(--accent-cyan)',
+              color: '#000',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            <Plus size={16} />
+            <span>Import Text</span>
+          </button>
+        </div>
       </div>
 
       {/* Deck Cards */}
