@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "npm run dev --workspace=packages/app",
     "build": "npm run build --workspace=packages/app",
+    "deploy": "npm run build && gh-pages -d packages/app/dist",
     "test": "npm run test --workspaces --if-present",
     "data:build": "npm run build-seed --workspace=packages/data-scripts"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
