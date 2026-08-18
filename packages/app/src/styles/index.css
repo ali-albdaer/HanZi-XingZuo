@@ -324,3 +324,11 @@ button {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
+
+/* Modal Responsive Navigation Helpers */
+@media (max-width: 768px) {
+  .desktop-nav-btn {
+    display: none !important;
+  }
+}
+

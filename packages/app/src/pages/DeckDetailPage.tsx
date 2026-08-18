@@ -90,10 +90,10 @@ export const DeckDetailPage: React.FC = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 5,
-                padding: '5px 10px',
+                gap: 4,
+                padding: '5px 8px',
                 borderRadius: 6,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 600,
                 backgroundColor: viewMode === key ? 'var(--accent-cyan)' : 'transparent',
                 color: viewMode === key ? '#000' : 'var(--text-muted)',

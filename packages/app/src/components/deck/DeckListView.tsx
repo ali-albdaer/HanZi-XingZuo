@@ -58,7 +58,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
   const setCardDisplayOptions = useSettingsStore((s) => s.setCardDisplayOptions);
 
   const [displayLayout, setDisplayLayout] = useState<'list' | 'grid'>('grid');
-  const [showDisplayOptions, setShowDisplayOptions] = useState(true);
+  const [showDisplayOptions, setShowDisplayOptions] = useState(false);
   const [showFilterOptions, setShowFilterOptions] = useState(false);
   const [showCardViewOptions, setShowCardViewOptions] = useState(false);
 
@@ -80,13 +80,20 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
     ? searchAndRankCharacters(filteredByKnown, searchQuery)
     : sortCharacters(filteredByKnown, sortOption, randomSeed);
 
+  const isFilterActive =
+    !listFilterOptions.showKnownCharacters ||
+    !listFilterOptions.showMasteryGold ||
+    !listFilterOptions.showMasterySilver ||
+    !listFilterOptions.showMasteryBronze ||
+    !listFilterOptions.showMasteryGrey;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
 
-      {/* ── Compact Toolbar ─────────────────────────────── */}
+      {/* ── Responsive Toolbar ─────────────────────────────── */}
       <div
         style={{
-          padding: '8px 12px 8px',
+          padding: '10px 14px 8px',
           background: 'var(--bg-main)',
           borderBottom: '1px solid var(--border-color)',
           flexShrink: 0,
@@ -95,26 +102,27 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
           gap: 8,
         }}
       >
-        {/* Row 1: Search + Sort + Layout + Filter toggle */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* Row 1: Search + Sort + Grid/List toggle */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
 
-          {/* Search */}
+          {/* Search Bar */}
           <div
             style={{
-              flex: '0 1 120px',
+              flex: 1,
+              minWidth: 90,
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
+              gap: 6,
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
               borderRadius: 10,
-              padding: '7px 12px',
+              padding: '7px 10px',
             }}
           >
             <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <input
               type="text"
-              placeholder="Search…"
+              placeholder="Search chars, pinyin…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -140,7 +148,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
                 backgroundColor: 'var(--bg-card)',
                 border: '1px solid var(--border-color)',
                 borderRadius: 10,
-                padding: '7px 28px 7px 10px',
+                padding: '7px 24px 7px 9px',
                 fontSize: 12,
                 fontWeight: 500,
                 color: 'var(--text-secondary)',
@@ -157,7 +165,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               size={12}
               style={{
                 position: 'absolute',
-                right: 8,
+                right: 7,
                 top: '50%',
                 transform: 'translateY(-50%)',
                 color: 'var(--text-muted)',
@@ -173,7 +181,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
               borderRadius: 10,
-              padding: 3,
+              padding: 2,
               gap: 2,
               flexShrink: 0,
             }}
@@ -182,8 +190,8 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               onClick={() => setDisplayLayout('grid')}
               title="Grid View"
               style={{
-                width: 30,
-                height: 30,
+                width: 28,
+                height: 28,
                 borderRadius: 7,
                 backgroundColor: displayLayout === 'grid' ? 'var(--accent-cyan)' : 'transparent',
                 color: displayLayout === 'grid' ? '#000' : 'var(--text-muted)',
@@ -199,8 +207,8 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               onClick={() => setDisplayLayout('list')}
               title="List View"
               style={{
-                width: 30,
-                height: 30,
+                width: 28,
+                height: 28,
                 borderRadius: 7,
                 backgroundColor: displayLayout === 'list' ? 'var(--accent-cyan)' : 'transparent',
                 color: displayLayout === 'list' ? '#000' : 'var(--text-muted)',
@@ -213,14 +221,27 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               <List size={14} />
             </button>
           </div>
+        </div>
 
+        {/* Row 2: Category Toggle Buttons (Display, Filter, Card-View) */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            width: '100%',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {/* Display options toggle */}
           <button
             onClick={() => setShowDisplayOptions((v) => !v)}
-            title="Display options"
+            title="Toggle list display options"
             className={`btn btn-secondary ${showDisplayOptions ? 'active' : ''}`}
             style={{
-              padding: '7px 10px',
+              padding: '6px 12px',
               borderRadius: 10,
               display: 'flex',
               alignItems: 'center',
@@ -232,17 +253,17 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               fontWeight: 600,
             }}
           >
-            <Eye size={14} />
+            <Eye size={13} />
             <span>Display</span>
           </button>
 
           {/* Filter options toggle */}
           <button
             onClick={() => setShowFilterOptions((v) => !v)}
-            title="Filter options"
+            title="Toggle filters"
             className={`btn btn-secondary ${showFilterOptions ? 'active' : ''}`}
             style={{
-              padding: '7px 10px',
+              padding: '6px 12px',
               borderRadius: 10,
               display: 'flex',
               alignItems: 'center',
@@ -254,16 +275,28 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               fontWeight: 600,
             }}
           >
-            <SlidersHorizontal size={14} />
+            <SlidersHorizontal size={13} />
             <span>Filter</span>
+            {isFilterActive && (
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  backgroundColor: showFilterOptions ? '#000' : 'var(--accent-cyan)',
+                  marginLeft: -2,
+                }}
+              />
+            )}
           </button>
+
           {/* Card-View options toggle */}
           <button
             onClick={() => setShowCardViewOptions((v) => !v)}
-            title="Card-View options"
+            title="Toggle character detail card options"
             className={`btn btn-secondary ${showCardViewOptions ? 'active' : ''}`}
             style={{
-              padding: '7px 10px',
+              padding: '6px 12px',
               borderRadius: 10,
               display: 'flex',
               alignItems: 'center',
@@ -275,126 +308,173 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
               fontWeight: 600,
             }}
           >
-            <Square size={14} />
+            <Square size={13} />
             <span>Card-View</span>
           </button>
         </div>
 
-        {/* Row 2: Expandable options */}
+        {/* Row 3: Expandable Options Panels (Fully Wrapped for Mobile) */}
         {(showDisplayOptions || showFilterOptions || showCardViewOptions) && (
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              paddingTop: 2,
+              flexDirection: 'column',
+              gap: 8,
+              paddingTop: 4,
               paddingBottom: 2,
-              flexWrap: 'wrap',
             }}
           >
+            {/* Display options */}
             {showDisplayOptions && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2 }}>DISPLAY:</span>
-                {[
-                  { key: 'showPinyin', label: 'Pinyin' },
-                  { key: 'showRank',   label: 'Rank' },
-                  { key: 'showHsk',    label: 'HSK' },
-                ].map(({ key, label }) => {
-                  const isOn = listDisplayOptions[key as keyof typeof listDisplayOptions] as boolean;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setListDisplayOptions({ [key]: !isOn })}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                        background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
-                        color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                        transition: 'all 0.12s ease',
-                        letterSpacing: 0.2,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexWrap: 'wrap',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  padding: '6px 10px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2, flexShrink: 0 }}>
+                  DISPLAY:
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'showPinyin', label: 'Pinyin' },
+                    { key: 'showRank',   label: 'Rank' },
+                    { key: 'showHsk',    label: 'HSK' },
+                  ].map(({ key, label }) => {
+                    const isOn = listDisplayOptions[key as keyof typeof listDisplayOptions] as boolean;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setListDisplayOptions({ [key]: !isOn })}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                          background: isOn ? 'rgba(24,231,236,0.12)' : 'rgba(255,255,255,0.03)',
+                          color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                          transition: 'all 0.12s ease',
+                          letterSpacing: 0.2,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
             
+            {/* Filter options */}
             {showFilterOptions && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2 }}>FILTER:</span>
-                {[
-                  { key: 'showKnownCharacters', label: 'Known' },
-                  { key: 'showMasteryGold', label: 'Gold' },
-                  { key: 'showMasterySilver', label: 'Silver' },
-                  { key: 'showMasteryBronze', label: 'Bronze' },
-                  { key: 'showMasteryGrey', label: 'Grey' },
-                ].map(({ key, label }) => {
-                  const isOn = listFilterOptions[key as keyof typeof listFilterOptions] as boolean;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setListFilterOptions({ [key]: !isOn })}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                        background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
-                        color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                        transition: 'all 0.12s ease',
-                        letterSpacing: 0.2,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexWrap: 'wrap',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  padding: '6px 10px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2, flexShrink: 0 }}>
+                  FILTER:
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'showKnownCharacters', label: 'Known' },
+                    { key: 'showMasteryGold', label: 'Gold' },
+                    { key: 'showMasterySilver', label: 'Silver' },
+                    { key: 'showMasteryBronze', label: 'Bronze' },
+                    { key: 'showMasteryGrey', label: 'Grey' },
+                  ].map(({ key, label }) => {
+                    const isOn = listFilterOptions[key as keyof typeof listFilterOptions] as boolean;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setListFilterOptions({ [key]: !isOn })}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                          background: isOn ? 'rgba(24,231,236,0.12)' : 'rgba(255,255,255,0.03)',
+                          color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                          transition: 'all 0.12s ease',
+                          letterSpacing: 0.2,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
+            {/* Card-View options */}
             {showCardViewOptions && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2 }}>CARD-VIEW:</span>
-                {[
-                  { key: 'showMeaning', label: 'Meaning' },
-                  { key: 'showMastery', label: 'Mastery' },
-                  { key: 'showHsk', label: 'HSK' },
-                  { key: 'showPinyin', label: 'Pinyin' },
-                  { key: 'showRank', label: 'Rank' },
-                  { key: 'showRadical', label: 'Radical' },
-                  { key: 'showSentences', label: 'Sentences' },
-                  { key: 'showActions', label: 'Actions' },
-                ].map(({ key, label }) => {
-                  const isOn = cardDisplayOptions[key as keyof typeof cardDisplayOptions] as boolean;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setCardDisplayOptions({ [key]: !isOn })}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 20,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
-                        background: isOn ? 'rgba(24,231,236,0.12)' : 'transparent',
-                        color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                        transition: 'all 0.12s ease',
-                        letterSpacing: 0.2,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexWrap: 'wrap',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  padding: '6px 10px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: 0.5, marginRight: 2, flexShrink: 0 }}>
+                  CARD-VIEW:
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'showMeaning', label: 'Meaning' },
+                    { key: 'showMastery', label: 'Mastery' },
+                    { key: 'showHsk', label: 'HSK' },
+                    { key: 'showPinyin', label: 'Pinyin' },
+                    { key: 'showRank', label: 'Rank' },
+                    { key: 'showRadical', label: 'Radical' },
+                    { key: 'showSentences', label: 'Sentences' },
+                    { key: 'showActions', label: 'Actions' },
+                  ].map(({ key, label }) => {
+                    const isOn = cardDisplayOptions[key as keyof typeof cardDisplayOptions] as boolean;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setCardDisplayOptions({ [key]: !isOn })}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: `1px solid ${isOn ? 'var(--accent-cyan)' : 'var(--border-color)'}`,
+                          background: isOn ? 'rgba(24,231,236,0.12)' : 'rgba(255,255,255,0.03)',
+                          color: isOn ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                          transition: 'all 0.12s ease',
+                          letterSpacing: 0.2,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -404,14 +484,27 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
       {/* ── Result info bar ─────────────────────────────── */}
       <div
         style={{
-          padding: '5px 14px',
+          padding: '6px 14px',
           fontSize: 11,
           color: 'var(--text-muted)',
           flexShrink: 0,
           letterSpacing: 0.2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
         }}
       >
-        {sortedAndFiltered.length.toLocaleString()} / {characters.length.toLocaleString()} chars
+        <span>
+          {sortedAndFiltered.length.toLocaleString()} / {characters.length.toLocaleString()} chars
+        </span>
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            style={{ fontSize: 11, color: 'var(--accent-cyan)', cursor: 'pointer' }}
+          >
+            Clear search
+          </button>
+        )}
       </div>
 
       {/* ── Scrollable Content ───────────────────────────── */}
@@ -423,7 +516,7 @@ export const DeckListView: React.FC<DeckListViewProps> = ({ characters }) => {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(78px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))',
               gap: 8,
             }}
           >
